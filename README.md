@@ -16,7 +16,7 @@ composer require api-skeletons/doctrine-querybuilder-filter
 use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
 
 $applicator = (new Applicator($entityManager, Entity\User::class));
-$queryBuilder = $applicator($filter);
+$queryBuilder = $applicator($_REQUEST['filter']);
 ```
 
 ---
