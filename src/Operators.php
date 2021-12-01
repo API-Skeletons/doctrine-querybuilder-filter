@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ApiSkeletons\Laravel\Doctrine\Filter\Enums;
+namespace ApiSkeletons\Laravel\Doctrine\Filter;
 
-class OperatorEnum
+final class Operators
 {
     public const EQ        = 'eq';
     public const NEQ       = 'neq';

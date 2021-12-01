@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ApiSkeletons\Laravel\Doctrine\Filter;
 
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Exception;
 
@@ -21,8 +21,7 @@ use function trim;
 
 class Applicator
 {
-    /** @var string[] */
-    private array $fieldAliases = [];  // todo
+    private EntityManager $entityManager;
 
     private string $entityClass;
 
@@ -32,31 +31,28 @@ class Applicator
     private array $filterableFields = ['*'];
 
     /** @var string[] */
+    private array $fieldAliases = [];
+
+    /** @var string[] */
     private array $operators = [
-        'eq',
-        'neq',
-        'gt',
-        'gte',
-        'lt',
-        'lte',
-        'between',
-        'like',
-        'in',
-        'notIn',
-        'isNull',
-        'isNotNull',
+        Operators::EQ,
+        Operators::NEQ,
+        Operators::GT,
+        Operators::GTE,
+        Operators::LT,
+        Operators::LTE,
+        Operators::BETWEEN,
+        Operators::LIKE,
+        Operators::IN,
+        Operators::NOTIN,
+        Operators::ISNULL,
+        Operators::ISNOTNULL,
     ];
 
-    public function __construct(string $entityClass)
+    public function __construct(EntityManager $entityManager, string $entityClass)
     {
-        $this->setEntityClass($entityClass);
-    }
-
-    private function setEntityClass(string $entityClass): self
-    {
-        $this->entityClass = $entityClass;
-
-        return $this;
+        $this->entityManager = $entityManager;
+        $this->entityClass   = $entityClass;
     }
 
     public function removeOperator(string|array $operator): self
@@ -92,6 +88,16 @@ class Applicator
     }
 
     /**
+     * @param string[] $fieldAliases
+     */
+    public function setFieldAliases(array $fieldAliases): self
+    {
+        $this->fieldAliases = $fieldAliases;
+
+        return $this;
+    }
+
+    /**
      * @param string[] $filterableFields
      */
     public function setFilterableFields(array $filterableFields): self
@@ -106,11 +112,7 @@ class Applicator
      */
     public function applyFilters(array $filters): QueryBuilder
     {
-        $managerRegistry = app(ManagerRegistry::class);
-        $entityManager   = $managerRegistry->getManagerForClass($this->entityClass);
-
-        $queryBuilder = $entityManager->createQueryBuilder();
-        $queryBuilder
+        $queryBuilder = $this->entityManager->createQueryBuilder()
             ->select($this->entityAlias)
             ->from($this->entityClass, $this->entityAlias);
 
@@ -180,16 +182,28 @@ class Applicator
         }
 
         if (strpos($value, '|') === false) {
-            return trim($value);
+            $fieldName = trim($value);
+
+            if (isset($this->fieldAliases[$fieldName])) {
+                return $this->fieldAliases[$fieldName];
+            }
+
+            return $fieldName;
         }
 
-        return trim(substr($value, 0, strpos($value, '|')));
+        $fieldName = trim(substr($value, 0, strpos($value, '|')));
+
+        if (isset($this->fieldAliases[$fieldName])) {
+            return $this->fieldAliases[$fieldName];
+        }
+
+        return $fieldName;
     }
 
     private function getOperator(string $query): string
     {
-        if (strpos($query, '|') === false && in_array(Enums\OperatorEnum::EQ, $this->operators)) {
-            return Enums\OperatorEnum::EQ;
+        if (strpos($query, '|') === false && in_array(Operators::EQ, $this->operators)) {
+            return Operators::EQ;
         }
 
         $query = trim(substr($query, strpos($query, '|') + 1));
@@ -202,12 +216,12 @@ class Applicator
         return null;
     }
 
-    private function formatValue(string $value, string $columnType, string $operator): array|int|string
+    private function formatValue(string $value, string $columnType, string $operator): mixed
     {
         if (strpos($value, ',') === false) {
             return $columnType === 'int' || $columnType === 'integer' || $columnType === 'bigint'
             ? (int) $value
-            : ($operator === Enums\OperatorEnum::LIKE ? "'%" . strtolower($value) . "%'" : "'" . trim($value) . "'");
+            : ($operator === Operators::LIKE ? "'%" . strtolower($value) . "%'" : "'" . trim($value) . "'");
         }
 
         $value = explode(',', $value);
@@ -215,21 +229,21 @@ class Applicator
         $value = array_map(static function ($value) use ($columnType, $operator) {
             return $columnType === 'int' || $columnType === 'integer' || $columnType === 'bigint'
             ? (int) $value
-            : ($operator === Enums\OperatorEnum::LIKE ? "'%" . strtolower($value) . "%'" :  trim($value));
+            : ($operator === Operators::LIKE ? "'%" . strtolower($value) . "%'" :  trim($value));
         }, $value);
 
         return $value;
     }
 
-    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, string|int|bool $value, string $operator, string $columnType): void
+    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $columnType): void
     {
         $alias = $this->entityAlias;
 
         if (empty($operator)) {
             if (is_array($value)) {
-                $operator = Enums\OperatorEnum::IN;
+                $operator = Operators::IN;
             } else {
-                $operator = Enums\OperatorEnum::EQ;
+                $operator = Operators::EQ;
             }
         }
 
@@ -240,30 +254,30 @@ class Applicator
         }
 
         switch ($operator) {
-            case Enums\OperatorEnum::EQ:
-            case Enums\OperatorEnum::NEQ:
-            case Enums\OperatorEnum::IN:
-            case Enums\OperatorEnum::NOTIN:
-            case Enums\OperatorEnum::LT:
-            case Enums\OperatorEnum::LTE:
-            case Enums\OperatorEnum::GT:
-            case Enums\OperatorEnum::GTE:
+            case Operators::EQ:
+            case Operators::NEQ:
+            case Operators::IN:
+            case Operators::NOTIN:
+            case Operators::LT:
+            case Operators::LTE:
+            case Operators::GT:
+            case Operators::GTE:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, $value));
                 break;
-            case Enums\OperatorEnum::ISNULL:
-            case Enums\OperatorEnum::ISNOTNULL:
+            case Operators::ISNULL:
+            case Operators::ISNOTNULL:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName));
                 break;
-            case Enums\OperatorEnum::LIKE:
+            case Operators::LIKE:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator('LOWER(' . $alias . '.' . $columnName . ')', $value));
                 break;
-            case Enums\OperatorEnum::BETWEEN:
+            case Operators::BETWEEN:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, "'" . $value[0] . "'", "'" . $value[1] . "'"));
                 break;
         }
     }
 
-    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, string|int|bool $value, string $operator, string $columnType): void
+    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $columnType): void
     {
         $alias = $this->entityAlias;
 
