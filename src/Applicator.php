@@ -21,42 +21,79 @@ use function trim;
 
 class Applicator
 {
+    /**
+     * The entity manager for the passed $entityClass
+     * is required.  By passing in the entity manager
+     * this class remains framework agnostic.
+     */
     private EntityManager $entityManager;
 
+    /**
+     * Only the entity class name is required.
+     */
     private string $entityClass;
 
+    /**
+     * The entityAlias is the alias used for the
+     * $entityClass when building the Query Builder.
+     * You may set the entity alias to a specific
+     * value if you need to post-process the
+     * Query Builder.
+     */
     private string $entityAlias = 'entity';
 
-    /** @var string[] */
+    /**
+     * The $entityAliasMap is a map of all entities
+     * used in the Query Builder.  This is generated
+     * data and useful if you want to post-process
+     * the Query Builder.
+     *
+     * @var string[]
+     */
+    private array $entityAliasMap = [];
+
+    /**
+     * An array of field names which can be filtered.
+     * Defaults to all entity fields.
+     *
+     * @var string[]
+     * */
     private array $filterableFields = ['*'];
 
-    /** @var string[] */
+    /**
+     * A map of query field names to entity field
+     * names.  This allows you to alias fields in
+     * your query.
+     *
+     * @var string[]
+    */
     private array $fieldAliases = [];
 
+    /**
+     * A flag to enable deep queries using
+     * relationships.  Defaults to false.
+     */
     private bool $enableRelationships = false;
 
-    /** @var string[] */
-    private array $operators = [
-        Operators::EQ,
-        Operators::NEQ,
-        Operators::GT,
-        Operators::GTE,
-        Operators::LT,
-        Operators::LTE,
-        Operators::BETWEEN,
-        Operators::LIKE,
-        Operators::IN,
-        Operators::NOTIN,
-        Operators::ISNULL,
-        Operators::ISNOTNULL,
-    ];
+    /**
+     * An array of allowed operators.  To remove
+     * an operator from this list use removeOperator()
+     * method
+     *
+     * @var string[]
+     */
+    private array $operators = [];
 
     public function __construct(EntityManager $entityManager, string $entityClass)
     {
         $this->entityManager = $entityManager;
         $this->entityClass   = $entityClass;
+        $this->operators = Operators::toArray();
     }
 
+    /**
+     * You may remove available operators such as removing `like`
+     */
     public function removeOperator(string|array $operator): self
     {
         if (is_array($operator)) {
@@ -78,6 +115,9 @@ class Applicator
         return $this;
     }
 
+    /**
+     * When called this will enable deep queries using relationships
+     */
     public function enableRelationships(): self
     {
         $this->enableRelationships = true;
@@ -85,6 +125,9 @@ class Applicator
         return $this;
     }
 
+    /**
+     * Override the default entity alias
+     */
     public function setEntityAlias(string $entityAlias): self
     {
         if (! $entityAlias) {
@@ -97,6 +140,8 @@ class Applicator
     }
 
     /**
+     * Set the array of field aliases for aliasing filters
+     *
      * @param string[] $fieldAliases
      */
     public function setFieldAliases(array $fieldAliases): self
@@ -107,6 +152,8 @@ class Applicator
     }
 
     /**
+     * Set the array of filterable fields to limit what user can filer on
+     *
      * @param string[] $filterableFields
      */
     public function setFilterableFields(array $filterableFields): self
@@ -117,9 +164,21 @@ class Applicator
     }
 
     /**
+     * This is used after a Query Builder has been created.  It maps entity
+     * classes to aliases used in the Query builder.
+     */
+    public function getEntityAliasMap(): array
+    {
+        return $this->entityAliasMap;
+    }
+
+    /**
+     * This is the entry point to create a QueryBuidler based on passed
+     * filters
+     *
      * @param string[] $filters
      */
-    public function applyFilters(array $filters): QueryBuilder
+    public function __invoke(array $filters): QueryBuilder
     {
       $queryBuilder = $this->entityManager->createQueryBuilder()
             ->select($this->entityAlias)
@@ -137,12 +196,16 @@ class Applicator
             $this->applyRelationship($queryBuilder, $query, $value, $this->entityClass, $this->entityAlias);
         }
 
-#                print_r($queryBuilder->getQuery()->getSql()); die();
+        // Debugging
+        # print_r($queryBuilder->getQuery()->getSql()); die();
 
         return $queryBuilder;
     }
 
-    private function applyFilter(QueryBuilder $queryBuilder, string $query, string $value, string $entityClass, string $alias): self
+    /**
+     * Apply an individual filter to the QueryBuilder
+     */
+    private function applyFilter(QueryBuilder $queryBuilder, string $query, string $value, string $entityClass, string $alias): void
     {
         $fieldName = $this->getFieldName($query);
         $operator  = $this->getOperator($query);
@@ -151,7 +214,7 @@ class Applicator
             $this->filterableFields !== ['*']
             && ! in_array($fieldName, $this->filterableFields)
         ) {
-            return $this;
+            return;
         }
 
         $classMetadata = $queryBuilder->getEntityManager()->getClassMetadata($entityClass);
@@ -168,8 +231,8 @@ class Applicator
             }
 
             if (! $found) {
-              die('field not found: ' . $entityClass . '::' . $fieldName . ' alias ' . $alias);
-                return $this;
+              // die('field not found: ' . $entityClass . '::' . $fieldName . ' alias ' . $alias);
+                return;
             }
         }
 
@@ -177,32 +240,34 @@ class Applicator
             $associationMapping       = $classMetadata->getAssociationMapping($mappingName);
             $sourceAssociationMapping = $queryBuilder->getEntityManager()->getClassMetadata($associationMapping['sourceEntity']);
             $sourceIdentifierMapping  = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
-            $columnType               = $sourceIdentifierMapping['type'];
+            $fieldType               = $sourceIdentifierMapping['type'];
         } else {
             $fieldMapping = $classMetadata->getFieldMapping($fieldName);
-            $columnType   = $fieldMapping['type'];
+            $fieldType   = $fieldMapping['type'];
         }
 
         if ($operator) {
-            $formattedValue = $this->formatValue($value, $columnType, $operator);
-            $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $columnType, $alias);
+            $formattedValue = $this->formatValue($value, $fieldType, $operator);
+            $this->entityAliasMap[$entityClass] = $alias;
+            $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $fieldType, $alias);
         }
 
-        return $this;
+        return;
     }
 
-    private function applyRelationship(QueryBuilder $queryBuilder, string $query, mixed $value, string $entityClass, string $alias): self
+    /**
+     * Create a join for deep filtering
+     */
+    private function applyRelationship(QueryBuilder $queryBuilder, string $query, mixed $value, string $entityClass, string $alias): void
     {
         if (! $this->enableRelationships) {
-            return $this;
+            return;
         }
 
         $classMetadata = $queryBuilder->getEntityManager()->getClassMetadata($entityClass);
 
         $fieldAssociationMapping = null;
         foreach ($classMetadata->getAssociationMappings() as $associationMapping) {
-#          print_r($query);
- #         print_r($associationMapping);
             if ($query === $associationMapping['fieldName']) {
                 $fieldAssociationMapping = $associationMapping;
                 break;
@@ -210,11 +275,11 @@ class Applicator
         }
 
         if (! $fieldAssociationMapping) {
-          die('no field assocation mapping');
-            return $this;
+            return;
         }
 
         $queryBuilder->join($alias . '.' . $query, $query);
+        $this->entityAliasMap[$entityClass] = $alias;
 
         foreach ($value as $q => $v) {
             if (is_array($v)) {
@@ -224,9 +289,13 @@ class Applicator
             }
         }
 
-        return $this;
+        return;
     }
 
+    /**
+     * Given a query field, extract the field name.
+     * `name|neq` becomes `name`
+     */
     private function getFieldName(string $value): string
     {
         if (strpos($value, '.') !== false) {
@@ -252,6 +321,10 @@ class Applicator
         return $fieldName;
     }
 
+    /**
+     * Given a query field, extract the operator
+     * `name|neq` becomes `neq`
+     */
     private function getOperator(string $query): string
     {
         if (strpos($query, '|') === false && in_array(Operators::EQ, $this->operators)) {
@@ -268,18 +341,21 @@ class Applicator
         return null;
     }
 
-    private function formatValue(string $value, string $columnType, string $operator): mixed
+    /**
+     * Given a query value, format it based on metadata field type.
+     */
+    private function formatValue(string $value, string $fieldType, string $operator): mixed
     {
         if (strpos($value, ',') === false) {
-            return $columnType === 'int' || $columnType === 'integer' || $columnType === 'bigint'
+            return $fieldType === 'int' || $fieldType === 'integer' || $fieldType === 'bigint'
             ? (int) $value
             : ($operator === Operators::LIKE ? "'%" . strtolower($value) . "%'" : "'" . trim($value) . "'");
         }
 
         $value = explode(',', $value);
 
-        $value = array_map(static function ($value) use ($columnType, $operator) {
-            return $columnType === 'int' || $columnType === 'integer' || $columnType === 'bigint'
+        $value = array_map(static function ($value) use ($fieldType, $operator) {
+            return $fieldType === 'int' || $fieldType === 'integer' || $fieldType === 'bigint'
             ? (int) $value
             : ($operator === Operators::LIKE ? "'%" . strtolower($value) . "%'" :  trim($value));
         }, $value);
@@ -287,7 +363,10 @@ class Applicator
         return $value;
     }
 
-    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $columnType, string $alias): void
+    /**
+     * Apply a where clause to the QueryBuilder
+     */
+    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $fieldType, string $alias): void
     {
         if (empty($operator)) {
             if (is_array($value)) {
@@ -297,8 +376,8 @@ class Applicator
             }
         }
 
-        if ($columnType === 'jsonb') {
-            $this->applyJsonbWhere($queryBuilder, $columnName, $value, $operator, $columnType);
+        if ($fieldType === 'jsonb') {
+            $this->applyJsonbWhere($queryBuilder, $columnName, $value, $operator, $fieldType);
 
             return;
         }
@@ -324,10 +403,15 @@ class Applicator
             case Operators::BETWEEN:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, "'" . $value[0] . "'", "'" . $value[1] . "'"));
                 break;
+            default:
+                break;
         }
     }
 
-    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $columnType): void
+    /**
+     * Handle jsonb field types
+     */
+    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $fieldType): void
     {
         $alias = $this->entityAlias;
 

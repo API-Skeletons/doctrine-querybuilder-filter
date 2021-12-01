@@ -18,4 +18,22 @@ final class Operators
     public const NOTIN     = 'notIn';
     public const ISNULL    = 'isNull';
     public const ISNOTNULL = 'isNotNull';
+
+    public static function toArray(): array
+    {
+        return [
+            self::EQ,
+            self::NEQ,
+            self::GT,
+            self::GTE,
+            self::LT,
+            self::LTE,
+            self::BETWEEN,
+            self::LIKE,
+            self::IN,
+            self::NOTIN,
+            self::ISNULL,
+            self::ISNOTNULL,
+        ];
+    }
 }
