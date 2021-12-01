@@ -41,7 +41,7 @@ class DoctrineFilterRepository extends EntityRepository
 
     protected function applyLaravelDoctrineRelationships(QueryBuilder &$qb, $joinName, $values, $entityName): void
     {
-        $entityJoins = $entityName::getEntityJoins();
+        $entityJoins = $this->getEntityJoins();
 
         if (! array_key_exists($joinName, $entityJoins)) {
             return;
@@ -63,24 +63,24 @@ class DoctrineFilterRepository extends EntityRepository
         $columnNameFixed = self::prepareLaravelDoctrineColumnName($columnName);
 
         if (! is_array($columnNameFixed)) {
-            if (! array_key_exists($columnNameFixed, $entity::getAvailableFields())) {
+            if (! array_key_exists($columnNameFixed, $this->getAvailableFields())) {
                 return;
             }
 
-            $columnType      = $entity::getAvailableFields()[$columnNameFixed]['type'];
-            $columnNameFixed = $entity::getAvailableFields()[$columnNameFixed]['fieldName'];
+            $columnType      = $this->getAvailableFields()[$columnNameFixed]['type'];
+            $columnNameFixed = $this->getAvailableFields()[$columnNameFixed]['fieldName'];
         } else {
-            if (! array_key_exists(array_first($columnNameFixed), $entity::getAvailableFields())) {
+            if (! array_key_exists(array_first($columnNameFixed), $this->getAvailableFields())) {
                 return;
             }
 
-            $columnType         = $entity::getAvailableFields()[array_first($columnNameFixed)]['type'];
-            $columnNameFixed[0] = $entity::getAvailableFields()[array_first($columnNameFixed)]['fieldName'];
+            $columnType         = $this->getAvailableFields()[array_first($columnNameFixed)]['type'];
+            $columnNameFixed[0] = $this->getAvailableFields()[array_first($columnNameFixed)]['fieldName'];
         }
 
         $operator = self::prepareLaravelDoctrineOperator($columnName);
         $value    = $this->prepareLaravelDoctrineValue($value, $columnType, $operator);
-        $alias    = $entity::getEntityAlias();
+        $alias    = $this->getEntityAlias();
 
         $this->applyLaravelDoctrineWhere($qb, $alias, $columnNameFixed, $value, $operator, $columnType);
     }
