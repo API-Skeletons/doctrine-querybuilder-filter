@@ -1,31 +1,34 @@
-# laravel-doctrine-filtering
-Apply dynamic query filters using laravel-doctrine
+# Doctrine QueryBuilder Filter
 
-# How to use:
+Apply filters to a QueryBuilder based on request parameters.  Supports deep queries using joins.
 
-- In your Entity extends FilterEntity
-- In your validator you can use the rule isValidFilter to validate the url params filters
-- In your repository extends DoctrineFilterRepository and use the method applyFilters passing as parameters the queryBuilder
-and the url params filters.
+## Installation
 
-example:
+Run the following to install this library using [Composer](https://getcomposer.org/):
 
-     $qb = 
-       $this->_em
-         ->createQueryBuilder()
-         ->select($this->getEntityName()::getEntityAlias())
-         ->from($this->getEntityName(), $this->getEntityName()::getEntityAlias(), $indexBy);
+```bash
+composer require api-skeletons/doctrine-querybuilder-filter
+```
 
-      $this->applyLaravelDoctrineFilters($qb, $filters);
+## Use
 
-# Examples
+```php
+use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
+
+$applicator = (new Applicator($entityManager, Entity\User::class));
+$queryBuilder = $applicator($filter);
+```
+
+---
+
+## Examples
 
 example1:
 
       url = http://localhost/advertisements?filter[created_at]=2018-07-22T18:48:16-03:00
       query =
              SELECT advertisement
-             FROM Entities\Advertisement advertisement
+             FROM Entity\Advertisement advertisement
              WHERE advertisement.createdAt = '2018-07-22 18:48:16'
  
         
@@ -34,7 +37,7 @@ example1:
         url = http://localhost/advertisements?filter[id]=1,2
         query = 
                 SELECT advertisement
-                FROM Entities\Advertisement advertisement
+                FROM Entity\Advertisement advertisement
                 WHERE advertisement.id IN (1, 2)
 
 example3:
@@ -42,7 +45,7 @@ example3:
       url = http://localhost/advertisements?filter[created_at|between]=2018-07-22T18:48:16-03:00,2018-07-22T18:48:16-03:00
       query =
              SELECT advertisement
-             FROM Entities\Advertisement advertisement
+             FROM Entity\Advertisement advertisement
              WHERE advertisement.createdAt BETWEEN '2018-07-22 18:48:16' AND '2018-07-22 18:48:16'
 
 example 4:
@@ -50,10 +53,10 @@ example 4:
       url = http://localhost/advertisements?filter[customer_product][customer][name|like]=cor
       query =
              SELECT advertisement
-             FROM Entities\Advertisement advertisement
-             INNER JOIN Entities\CustomerProduct customer_product
+             FROM Entity\Advertisement advertisement
+             INNER JOIN Entity\CustomerProduct customer_product
              WITH advertisement.customerProductId = customer_product.id
-             INNER JOIN Entities\Customer customer
+             INNER JOIN Entity\Customer customer
              WITH customer_product.customerId = customer.id
              WHERE LOWER(customer.name) LIKE '%cor%'
 
