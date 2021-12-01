@@ -1,17 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ApiSkeletons\Laravel\Doctrine\Filter;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\QueryBuilder;
+use Exception;
+
+use function array_map;
+use function array_search;
+use function explode;
+use function in_array;
+use function is_array;
+use function strpos;
+use function strtolower;
+use function substr;
+use function trim;
 
 class Applicator
 {
-    private $fieldAliases = [];  # todo
-    private $entityClass;
-    private $entityAlias = 'entity';
-    private $filterableFields = ['*'];
-    private $operators = [
+    /** @var string[] */
+    private array $fieldAliases = [];  // todo
+
+    private string $entityClass;
+
+    private string $entityAlias = 'entity';
+
+    /** @var string[] */
+    private array $filterableFields = ['*'];
+
+    /** @var string[] */
+    private array $operators = [
         'eq',
         'neq',
         'gt',
@@ -43,9 +63,11 @@ class Applicator
         if (is_array($operator)) {
             foreach ($operator as $needle) {
                 $index = array_search($needle, $this->operators, true);
-                if ($index !== false) {
-                    unset($this->operators[$index]);
+                if ($index === false) {
+                    continue;
                 }
+
+                unset($this->operators[$index]);
             }
         } else {
             $index = array_search($operator, $this->operators, true);
@@ -60,7 +82,7 @@ class Applicator
     public function setEntityAlias(string $entityAlias): self
     {
         if (! $entityAlias) {
-            throw new \Exception('Entity alias cannot be empty');
+            throw new Exception('Entity alias cannot be empty');
         }
 
         $this->entityAlias = $entityAlias;
@@ -68,6 +90,9 @@ class Applicator
         return $this;
     }
 
+    /**
+     * @param string[] $filterableFields
+     */
     public function setFilterableFields(array $filterableFields): self
     {
         $this->filterableFields = $filterableFields;
@@ -75,16 +100,18 @@ class Applicator
         return $this;
     }
 
+    /**
+     * @param string[] $filters
+     */
     public function applyFilters(array $filters): QueryBuilder
     {
         $managerRegistry = app(ManagerRegistry::class);
-        $entityManager = $managerRegistry->getManagerForClass($this->entityClass);
+        $entityManager   = $managerRegistry->getManagerForClass($this->entityClass);
 
         $queryBuilder = $entityManager->createQueryBuilder();
         $queryBuilder
             ->select($this->entityAlias)
-            ->from($this->entityClass, $this->entityAlias)
-            ;
+            ->from($this->entityClass, $this->entityAlias);
 
         if (! $filters) {
             return $queryBuilder;
@@ -100,11 +127,12 @@ class Applicator
     private function applyFilter(QueryBuilder $queryBuilder, string $query, string $value): self
     {
         $fieldName = $this->getFieldName($query);
-        $operator = $this->getOperator($query);
+        $operator  = $this->getOperator($query);
 
-        if ($this->filterableFields !== ['*']
-            && ! in_array($fieldName, $this->filterableFields)) {
-
+        if (
+            $this->filterableFields !== ['*']
+            && ! in_array($fieldName, $this->filterableFields)
+        ) {
             return $this;
         }
 
@@ -115,7 +143,7 @@ class Applicator
             $found = false;
             foreach ($classMetadata->getAssociationMappings() as $name => $association) {
                 if ($association['fieldName'] === $fieldName) {
-                    $found = true;
+                    $found       = true;
                     $mappingName = $name;
                     break;
                 }
@@ -127,18 +155,19 @@ class Applicator
         }
 
         if (isset($mappingName)) {
-            $associationMapping = $classMetadata->getAssociationMapping($mappingName);
+            $associationMapping       = $classMetadata->getAssociationMapping($mappingName);
             $sourceAssociationMapping = $queryBuilder->getEntityManager()->getClassMetadata($associationMapping['sourceEntity']);
-            $sourceIdentifierMapping = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
-            $columnType = $sourceIdentifierMapping['type'];
+            $sourceIdentifierMapping  = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
+            $columnType               = $sourceIdentifierMapping['type'];
         } else {
             $fieldMapping = $classMetadata->getFieldMapping($fieldName);
-            $columnType = $fieldMapping['type'];
+            $columnType   = $fieldMapping['type'];
         }
 
-        $formattedValue = $this->formatValue($value, $columnType, $operator);
-
-        $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $columnType);
+        if ($operator) {
+            $formattedValue = $this->formatValue($value, $columnType, $operator);
+            $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $columnType);
+        }
 
         return $this;
     }
@@ -158,8 +187,8 @@ class Applicator
 
     private function getOperator(string $query): string
     {
-        if (strpos($query, '|') === false && in_array('eq', $this->operators)) {
-            return 'eq';
+        if (strpos($query, '|') === false && in_array(Enums\OperatorEnum::EQ, $this->operators)) {
+            return Enums\OperatorEnum::EQ;
         }
 
         $query = trim(substr($query, strpos($query, '|') + 1));
@@ -172,7 +201,7 @@ class Applicator
         return null;
     }
 
-    private function formatValue($value, $columnType, $operator): array|int|string
+    private function formatValue(string $value, string $columnType, string $operator): array|int|string
     {
         if (strpos($value, ',') === false) {
             return $columnType === 'int' || $columnType === 'integer' || $columnType === 'bigint'
@@ -191,7 +220,7 @@ class Applicator
         return $value;
     }
 
-    private function applyWhere(QueryBuilder $queryBuilder, $columnName, $value, $operator, $columnType): void
+    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, string $value, string $operator, string $columnType): void
     {
         $alias = $this->entityAlias;
 
@@ -205,7 +234,7 @@ class Applicator
 
         if ($columnType === 'jsonb') {
           // fixme
-          die('jsonb not supported');
+            die('jsonb not supported');
 //            $this->applyLaravelDoctrineJsonbWhere($queryBuilder, $alias, $columnName, $value, $operator, $columnType);
 
             return;
