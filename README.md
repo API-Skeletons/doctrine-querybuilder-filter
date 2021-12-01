@@ -30,8 +30,8 @@ $applicator = (new Applicator($entityManager, Entity\User::class))
     ->enableRelationships()
     ->removeOperator('like')
     ->setEntityAlias('user')
-    ->setFieldAliases(['firstName' => 'name')
-    ->setFilterableFields(['name', 'id'])
+    ->setFieldAliases(['firstName' => 'name'])
+    ->setFilterableFields(['id', 'name'])
     ;
 $queryBuilder = $applicator($_REQUEST['filter']);
 
