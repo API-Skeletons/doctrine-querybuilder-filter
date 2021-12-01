@@ -1,11 +1,11 @@
 <?php
 
-namespace LaravelDoctrineFiltering\Repositories;
+namespace ApiSkeletons\Laravel\Doctrine\Filter\Repositories;
 
 use Carbon\Carbon;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\EntityRepository;
-use LaravelDoctrineFiltering\Enums\OperatorEnum;
+use ApiSkeletons\Laravel\Doctrine\Filter\Enums\OperatorEnum;
 
 /**
  * Class DoctrineFilterRepository

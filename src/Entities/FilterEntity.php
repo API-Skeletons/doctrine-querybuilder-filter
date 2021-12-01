@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelDoctrineFiltering\Entities;
+namespace ApiSkeletons\Laravel\Doctrine\Filter\Entities;
 
 use LaravelDoctrine\ORM\Facades\EntityManager;
 

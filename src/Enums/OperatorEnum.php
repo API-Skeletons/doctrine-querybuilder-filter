@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelDoctrineFiltering\Enums;
+namespace ApiSkeletons\Laravel\Doctrine\Filter\Enums;
 
 /**
  * Class OperatorEnum

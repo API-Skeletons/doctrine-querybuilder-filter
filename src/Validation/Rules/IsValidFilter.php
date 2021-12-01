@@ -1,6 +1,6 @@
 <?php
 
-namespace LaravelDoctrineFiltering\Validation\Rules\Filter;
+namespace ApiSkeletons\Laravel\Doctrine\Filter\Validation\Rules\Filter;
 
 use Illuminate\Contracts\Validation\ImplicitRule;
 
