@@ -70,48 +70,19 @@ In your entity add a static attribute $joins with this structure:
        'site' => ['entity' => Site::class, 'condition' => 'advertisement.siteId = site.id']
      ];
 
-# OperatorEnum / available operators
 
-      case 'eq':
-      case '=':
-        return OperatorEnum::EQ;
+## Available Operators
 
-      case 'neq':
-      case '!=':
-      case '<>':
-        return OperatorEnum::NEQ;
+* eq: equals
+* neq: not equals
+* gt: greater than
+* gte: greater than or equals
+* lt: less than
+* lte: less than or equals
+* between: between values.  Delimit with a comma
+* like: a fuzzy query '%value%'
+* in: in an array of values.  Delimit with a comma
+* notin: not in an arry of values.  Delimit with a comma
+* isnull: is the field null?
+* isnotnull: is the field not null?
 
-      case 'gt':
-      case '>':
-        return OperatorEnum::GT;
-
-      case 'gte':
-      case '>=':
-        return OperatorEnum::GTE;
-
-      case 'lt':
-      case '<':
-        return OperatorEnum::LT;
-
-      case 'lte':
-      case '<=':
-        return OperatorEnum::LTE;
-
-      case 'between':
-        return OperatorEnum::BETWEEN;
-
-      case 'like':
-        return OperatorEnum::LIKE;
-
-      case 'in':
-        return OperatorEnum::IN;
-
-      case 'notin':
-        return OperatorEnum::NOTIN;
-
-      case 'isnull':
-        return OperatorEnum::ISNULL;
-
-      case 'isnotnull':
-        return OperatorEnum::ISNOTNULL;
-        
