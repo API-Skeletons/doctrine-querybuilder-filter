@@ -1,26 +1,30 @@
 {
-    "name": "kiqcavalcanti/laravel-doctrine-filtering",
-    "description": "apply dynamic filters using laravel doctrine",
+    "name": "api-skeletons/laravel-doctrine-filter",
+    "description": "Dynamic filters for Laravel Doctrine",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
             "name": "Kaique dos Santos Cavalcanti",
             "email": "kaiquescsantos@gmail.com"
+        },
+        {
+            "name": "Tom H Anderson",
+            "email": "tom.h.anderson@gmail.com"
         }
     ],
-  "require": {
-    "php": "^8.0",
-    "doctrine/collections": "^1.6",
-    "laravel-doctrine/orm": "^1.7"
-  },
-  "autoload": {
-    "psr-4": {
-      "ApiSkeletons\\Laravel\\Doctrine\\Filter\\": "src"
-    }
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": true,
+    "require": {
+        "php": "^8.0",
+        "doctrine/collections": "^1.6",
+        "laravel-doctrine/orm": "^1.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "ApiSkeletons\\Laravel\\Doctrine\\Filter\\": "src"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require-dev": {
         "doctrine/coding-standard": "^9.0"
     }
