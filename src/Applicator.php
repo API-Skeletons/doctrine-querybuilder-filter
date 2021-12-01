@@ -66,7 +66,7 @@ class Applicator
      * your query.
      *
      * @var string[]
-    */
+     */
     private array $fieldAliases = [];
 
     /**
@@ -88,7 +88,7 @@ class Applicator
     {
         $this->entityManager = $entityManager;
         $this->entityClass   = $entityClass;
-        $this->operators = Operators::toArray();
+        $this->operators     = Operators::toArray();
     }
 
     /**
@@ -166,6 +166,8 @@ class Applicator
     /**
      * This is used after a Query Builder has been created.  It maps entity
      * classes to aliases used in the Query builder.
+     *
+     * @return string[]
      */
     public function getEntityAliasMap(): array
     {
@@ -180,7 +182,7 @@ class Applicator
      */
     public function __invoke(array $filters): QueryBuilder
     {
-      $queryBuilder = $this->entityManager->createQueryBuilder()
+        $queryBuilder = $this->entityManager->createQueryBuilder()
             ->select($this->entityAlias)
             ->from($this->entityClass, $this->entityAlias);
 
@@ -197,7 +199,7 @@ class Applicator
         }
 
         // Debugging
-        # print_r($queryBuilder->getQuery()->getSql()); die();
+        // print_r($queryBuilder->getQuery()->getSql()); die();
 
         return $queryBuilder;
     }
@@ -240,14 +242,14 @@ class Applicator
             $associationMapping       = $classMetadata->getAssociationMapping($mappingName);
             $sourceAssociationMapping = $queryBuilder->getEntityManager()->getClassMetadata($associationMapping['sourceEntity']);
             $sourceIdentifierMapping  = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
-            $fieldType               = $sourceIdentifierMapping['type'];
+            $fieldType                = $sourceIdentifierMapping['type'];
         } else {
             $fieldMapping = $classMetadata->getFieldMapping($fieldName);
-            $fieldType   = $fieldMapping['type'];
+            $fieldType    = $fieldMapping['type'];
         }
 
         if ($operator) {
-            $formattedValue = $this->formatValue($value, $fieldType, $operator);
+            $formattedValue                     = $this->formatValue($value, $fieldType, $operator);
             $this->entityAliasMap[$entityClass] = $alias;
             $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $fieldType, $alias);
         }

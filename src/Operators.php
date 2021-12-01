@@ -19,6 +19,9 @@ final class Operators
     public const ISNULL    = 'isNull';
     public const ISNOTNULL = 'isNotNull';
 
+    /**
+     * @return string[]
+     */
     public static function toArray(): array
     {
         return [
