@@ -20,5 +20,8 @@
     }
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+    "require-dev": {
+        "doctrine/coding-standard": "^9.0"
+    }
 }

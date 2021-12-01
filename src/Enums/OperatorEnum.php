@@ -1,23 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ApiSkeletons\Laravel\Doctrine\Filter\Enums;
 
-/**
- * Class OperatorEnum
- * @package LaravelDoctrineFiltering\Enums
- */
 class OperatorEnum
 {
-  const EQ = 'eq';
-  const NEQ = 'neq';
-  const GT = 'gt';
-  const GTE = 'gte';
-  const LT = 'lt';
-  const LTE = 'lte';
-  const BETWEEN = 'between';
-  const LIKE = 'like';
-  const IN = 'in';
-  const NOTIN = 'notIn';
-  const ISNULL = 'isNull';
-  const ISNOTNULL = 'isNotNull';
+    public const EQ        = 'eq';
+    public const NEQ       = 'neq';
+    public const GT        = 'gt';
+    public const GTE       = 'gte';
+    public const LT        = 'lt';
+    public const LTE       = 'lte';
+    public const BETWEEN   = 'between';
+    public const LIKE      = 'like';
+    public const IN        = 'in';
+    public const NOTIN     = 'notIn';
+    public const ISNULL    = 'isNull';
+    public const ISNOTNULL = 'isNotNull';
 }

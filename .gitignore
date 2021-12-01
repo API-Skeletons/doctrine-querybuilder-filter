@@ -2,3 +2,5 @@
 /.idea
 *~
 *.log
+.phpcs-cache
+composer.lock
