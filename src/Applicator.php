@@ -33,6 +33,8 @@ class Applicator
     /** @var string[] */
     private array $fieldAliases = [];
 
+    private bool $enableRelationships = false;
+
     /** @var string[] */
     private array $operators = [
         Operators::EQ,
@@ -76,6 +78,13 @@ class Applicator
         return $this;
     }
 
+    public function enableRelationships(): self
+    {
+        $this->enableRelationships = true;
+
+        return $this;
+    }
+
     public function setEntityAlias(string $entityAlias): self
     {
         if (! $entityAlias) {
@@ -112,7 +121,7 @@ class Applicator
      */
     public function applyFilters(array $filters): QueryBuilder
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
+      $queryBuilder = $this->entityManager->createQueryBuilder()
             ->select($this->entityAlias)
             ->from($this->entityClass, $this->entityAlias);
 
@@ -121,13 +130,19 @@ class Applicator
         }
 
         foreach ($filters as $query => $value) {
-            $this->applyFilter($queryBuilder, $query, $value);
+            if (! is_array($value)) {
+                $this->applyFilter($queryBuilder, $query, $value, $this->entityClass, $this->entityAlias);
+            }
+
+            $this->applyRelationship($queryBuilder, $query, $value, $this->entityClass, $this->entityAlias);
         }
+
+#                print_r($queryBuilder->getQuery()->getSql()); die();
 
         return $queryBuilder;
     }
 
-    private function applyFilter(QueryBuilder $queryBuilder, string $query, string $value): self
+    private function applyFilter(QueryBuilder $queryBuilder, string $query, string $value, string $entityClass, string $alias): self
     {
         $fieldName = $this->getFieldName($query);
         $operator  = $this->getOperator($query);
@@ -139,7 +154,7 @@ class Applicator
             return $this;
         }
 
-        $classMetadata = $queryBuilder->getEntityManager()->getClassMetadata($this->entityClass);
+        $classMetadata = $queryBuilder->getEntityManager()->getClassMetadata($entityClass);
 
         // Verify the field exists on the entity
         if (! $classMetadata->hasField($fieldName)) {
@@ -153,6 +168,7 @@ class Applicator
             }
 
             if (! $found) {
+              die('field not found: ' . $entityClass . '::' . $fieldName . ' alias ' . $alias);
                 return $this;
             }
         }
@@ -169,13 +185,49 @@ class Applicator
 
         if ($operator) {
             $formattedValue = $this->formatValue($value, $columnType, $operator);
-            $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $columnType);
+            $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $columnType, $alias);
         }
 
         return $this;
     }
 
-    protected function getFieldName(string $value): string
+    private function applyRelationship(QueryBuilder $queryBuilder, string $query, mixed $value, string $entityClass, string $alias): self
+    {
+        if (! $this->enableRelationships) {
+            return $this;
+        }
+
+        $classMetadata = $queryBuilder->getEntityManager()->getClassMetadata($entityClass);
+
+        $fieldAssociationMapping = null;
+        foreach ($classMetadata->getAssociationMappings() as $associationMapping) {
+#          print_r($query);
+ #         print_r($associationMapping);
+            if ($query === $associationMapping['fieldName']) {
+                $fieldAssociationMapping = $associationMapping;
+                break;
+            }
+        }
+
+        if (! $fieldAssociationMapping) {
+          die('no field assocation mapping');
+            return $this;
+        }
+
+        $queryBuilder->join($alias . '.' . $query, $query);
+
+        foreach ($value as $q => $v) {
+            if (is_array($v)) {
+                $this->applyRelationship($queryBuilder, $q, $v, $fieldAssociationMapping['targetEntity'], $fieldAssociationMapping['fieldName']);
+            } else {
+                $this->applyFilter($queryBuilder, $q, $v, $fieldAssociationMapping['targetEntity'], $fieldAssociationMapping['fieldName']);
+            }
+        }
+
+        return $this;
+    }
+
+    private function getFieldName(string $value): string
     {
         if (strpos($value, '.') !== false) {
             $value = explode('.', $value);
@@ -235,10 +287,8 @@ class Applicator
         return $value;
     }
 
-    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $columnType): void
+    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $columnType, string $alias): void
     {
-        $alias = $this->entityAlias;
-
         if (empty($operator)) {
             if (is_array($value)) {
                 $operator = Operators::IN;
