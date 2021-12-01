@@ -1,6 +1,6 @@
 {
     "name": "api-skeletons/doctrine-querybuilder-filter",
-    "description": "Dynamic filters for Doctrine QueryBuilder",
+    "description": "Create a QueryBuilder based on query parameters",
     "type": "library",
     "license": "MIT",
     "authors": [
