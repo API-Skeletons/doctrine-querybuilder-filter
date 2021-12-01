@@ -12,12 +12,32 @@ composer require api-skeletons/doctrine-querybuilder-filter
 
 ## Use
 
+This is the minimum required to use this library
+
 ```php
 use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
 
 $applicator = (new Applicator($entityManager, Entity\User::class));
 $queryBuilder = $applicator($_REQUEST['filter']);
 ```
+
+This is an example of configuring the applicator with all possible options
+
+```php
+use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
+
+$applicator = (new Applicator($entityManager, Entity\User::class))
+    ->enableRelationships()
+    ->removeOperator('like')
+    ->setEntityAlias('user')
+    ->setFieldAliases(['firstName' => 'name')
+    ->setFilterableFields(['name', 'id'])
+    ;
+$queryBuilder = $applicator($_REQUEST['filter']);
+
+$entityAliasMap = $applicator->getEntityAliasMap();
+```
+
 
 ---
 
