@@ -1,6 +1,6 @@
 {
-    "name": "api-skeletons/laravel-doctrine-filter",
-    "description": "Dynamic filters for Laravel Doctrine",
+    "name": "api-skeletons/doctrine-querybuilder-filter",
+    "description": "Dynamic filters for Doctrine QueryBuilder",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "ApiSkeletons\\Laravel\\Doctrine\\Filter\\": "src"
+            "ApiSkeletons\\Doctrine\\QueryBuilder\\Filter\\": "src"
         }
     },
     "minimum-stability": "dev",

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ApiSkeletons\Laravel\Doctrine\Filter;
+namespace ApiSkeletons\Doctrine\QueryBuilder\Filter;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
