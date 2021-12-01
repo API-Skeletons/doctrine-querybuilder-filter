@@ -221,7 +221,7 @@ class Applicator
         return $value;
     }
 
-    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, string $value, string $operator, string $columnType): void
+    private function applyWhere(QueryBuilder $queryBuilder, string $columnName, string|int|bool $value, string $operator, string $columnType): void
     {
         $alias = $this->entityAlias;
 
@@ -263,7 +263,7 @@ class Applicator
         }
     }
 
-    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, string $value, string $operator, string $columnType): void
+    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, string|int|bool $value, string $operator, string $columnType): void
     {
         $alias = $this->entityAlias;
 
