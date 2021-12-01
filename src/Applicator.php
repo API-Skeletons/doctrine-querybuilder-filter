@@ -10,6 +10,7 @@ use Exception;
 
 use function array_map;
 use function array_search;
+use function count;
 use function explode;
 use function in_array;
 use function is_array;
@@ -233,9 +234,7 @@ class Applicator
         }
 
         if ($columnType === 'jsonb') {
-          // fixme
-            die('jsonb not supported');
-//            $this->applyLaravelDoctrineJsonbWhere($queryBuilder, $alias, $columnName, $value, $operator, $columnType);
+            $this->applyJsonbWhere($queryBuilder, $columnName, $value, $operator, $columnType);
 
             return;
         }
@@ -260,6 +259,63 @@ class Applicator
                 break;
             case Enums\OperatorEnum::BETWEEN:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, "'" . $value[0] . "'", "'" . $value[1] . "'"));
+                break;
+        }
+    }
+
+    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, string $value, string $operator, string $columnType): void
+    {
+        $alias = $this->entityAlias;
+
+        $path = null;
+        if (is_array($columnName)) {
+            for ($i = 0; $i < count($columnName); $i++) {
+                if ($i === 0) {
+                    continue;
+                }
+
+                $currentColumn  = $columnName[$i];
+                $previousColumn = $i - 1 === 0
+                ? $alias . '.' . $columnName[$i - 1]
+                : $columnName[$i - 1];
+
+                if ($i === count($columnName) - 1) {
+                    $path = empty($path)
+                    ? 'JSON_GET_FIELD_AS_TEXT(' . $currentColumn . ', \'' . $previousColumn . '\')'
+                    : 'JSON_GET_FIELD_AS_TEXT(' . $path . ', \'' . $currentColumn . '\')';
+                    break;
+                }
+
+                $path = empty($path)
+                    ? 'JSON_GET_FIELD(' . $previousColumn . ', \'' . $currentColumn . '\')'
+                    : 'JSON_GET_FIELD(' . $path . ', \'' . $currentColumn . '\')';
+            }
+        } else {
+            $path = $alias . '.' . $columnName;
+        }
+
+        switch ($operator) {
+            case OperatorEnum::EQ:
+            case OperatorEnum::NEQ:
+            case OperatorEnum::IN:
+            case OperatorEnum::NOTIN:
+            case OperatorEnum::LT:
+            case OperatorEnum::LTE:
+            case OperatorEnum::GT:
+            case OperatorEnum::GTE:
+                $queryBuilder->andWhere($queryBuilder->expr()->$operator($path, $value));
+                break;
+            case OperatorEnum::ISNULL:
+            case OperatorEnum::ISNOTNULL:
+                $queryBuilder->andWhere($queryBuilder->expr()->$operator($path));
+                break;
+            case OperatorEnum::LIKE:
+                $queryBuilder->andWhere($queryBuilder->expr()->$operator('LOWER(' . $path . ')', $value));
+                break;
+            case OperatorEnum::BETWEEN:
+                $queryBuilder->andWhere($queryBuilder->expr()->$operator($path, "'" . $value[0] . "'", "'" . $value[1] . "'"));
+                break;
+            default:
                 break;
         }
     }
