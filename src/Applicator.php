@@ -18,6 +18,7 @@ use function strpos;
 use function strtolower;
 use function substr;
 use function trim;
+use function uniqid;
 
 class Applicator
 {
@@ -348,18 +349,44 @@ class Applicator
      */
     private function formatValue(string $value, string $fieldType, string $operator): mixed
     {
+        $value = trim($value);
+
         if (strpos($value, ',') === false) {
-            return $fieldType === 'int' || $fieldType === 'integer' || $fieldType === 'bigint'
-            ? (int) $value
-            : ($operator === Operators::LIKE ? "'%" . strtolower($value) . "%'" : "'" . trim($value) . "'");
+            switch ($fieldType) {
+                case 'int':
+                case 'integer':
+                    return (int) $value;
+
+                case 'bigint':
+                    // bigint is handled as a string internally to PHP and cannot be typecast to an int
+                    return $value;
+
+                default:
+                    switch ($operator) {
+                        case Operators::LIKE:
+                            return '%' . $value . '%';
+
+                        case Operators::SORT:
+                            return strtolower($value) === 'asc' ? 'asc' : 'desc';
+
+                        default:
+                            return $value;
+                    }
+            }
         }
 
         $value = explode(',', $value);
+        $value = array_map(static function ($value) use ($fieldType) {
+            switch ($fieldType) {
+                case 'int':
+                case 'integer':
+                    return (int) $value;
 
-        $value = array_map(static function ($value) use ($fieldType, $operator) {
-            return $fieldType === 'int' || $fieldType === 'integer' || $fieldType === 'bigint'
-            ? (int) $value
-            : ($operator === Operators::LIKE ? "'%" . strtolower($value) . "%'" :  trim($value));
+                case 'bigint':
+                    // bigint is handled as a string internally to PHP and cannot be typecast to an int
+                default:
+                    return $value;
+            }
         }, $value);
 
         return $value;
@@ -370,14 +397,6 @@ class Applicator
      */
     private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $fieldType, string $alias): void
     {
-        if (empty($operator)) {
-            if (is_array($value)) {
-                $operator = Operators::IN;
-            } else {
-                $operator = Operators::EQ;
-            }
-        }
-
         if ($fieldType === 'jsonb') {
             $this->applyJsonbWhere($queryBuilder, $columnName, $value, $operator, $fieldType);
 
@@ -393,17 +412,31 @@ class Applicator
             case Operators::LTE:
             case Operators::GT:
             case Operators::GTE:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, $value));
+                $uniqid = 'q' . uniqid(); // Cannot start a parameter with a number
+                $queryBuilder
+                    ->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, ':' . $uniqid))
+                    ->setParameter($uniqid, $value);
                 break;
             case Operators::ISNULL:
             case Operators::ISNOTNULL:
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName));
                 break;
             case Operators::LIKE:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator('LOWER(' . $alias . '.' . $columnName . ')', $value));
+                $uniqid = 'q' . uniqid(); // Cannot start a parameter with a number
+                $queryBuilder
+                    ->andWhere($queryBuilder->expr()->like($alias . '.' . $columnName, ':' . $uniqid))
+                    ->setParameter($uniqid, $value);
                 break;
             case Operators::BETWEEN:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName, "'" . $value[0] . "'", "'" . $value[1] . "'"));
+                $uniqid1 = 'q' . uniqid(); // Cannot start a parameter with a number
+                $uniqid2 = 'q' . uniqid(); // Cannot start a parameter with a number
+                $queryBuilder
+                    ->andWhere($queryBuilder->expr()->between($alias . '.' . $columnName, ':' . $uniqid1, ':' . $uniqid2))
+                    ->setParameter($uniqid1, $value[0])
+                    ->setParameter($uniqid2, $value[1]);
+                break;
+            case Operators::SORT:
+                $queryBuilder->addOrderBy($alias . '.' . $columnName, $value);
                 break;
             default:
                 break;

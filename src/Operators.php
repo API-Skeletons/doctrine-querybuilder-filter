@@ -18,6 +18,7 @@ final class Operators
     public const NOTIN     = 'notIn';
     public const ISNULL    = 'isNull';
     public const ISNOTNULL = 'isNotNull';
+    public const SORT      = 'sort';
 
     /**
      * @return string[]
@@ -37,6 +38,7 @@ final class Operators
             self::NOTIN,
             self::ISNULL,
             self::ISNOTNULL,
+            self::SORT,
         ];
     }
 }
