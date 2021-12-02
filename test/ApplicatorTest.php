@@ -99,6 +99,90 @@ class ApplicatorTest extends TestCase
         $this->assertEquals(4, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
+    public function testBetween(): void
+    {
+        $filter = ['id|between' => '3,5'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(3, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testLike(): void
+    {
+        $filter = ['name|like' => 'ish'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Artist::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(1, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testIn(): void
+    {
+        $filter = ['id|in' => '1,3'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Artist::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(2, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testNotIn(): void
+    {
+        $filter = ['id|notin' => '1,2'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Artist::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(1, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testIsNull(): void
+    {
+        $filter = ['venue|isnull' => 'true'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(1, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testIsNotNull(): void
+    {
+        $filter = ['venue|isnotnull' => 'true'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(6, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testSortAsc(): void
+    {
+        $filter = ['city|sort' => 'asc'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $result = $queryBuilder->getQuery()->getResult();
+
+        $this->assertEquals('Big Cypress', $result[0]->getCity());
+    }
+
+    public function testSortDesc(): void
+    {
+        $filter = ['venue|sort' => 'desc'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $result = $queryBuilder->getQuery()->getResult();
+
+        $this->assertEquals('Soldier Field', $result[0]->getVenue());
+    }
+
     public function testRemoveOperator(): void
     {
         $filter = ['performanceDate|gt' => '1998-11-02'];
@@ -268,7 +352,7 @@ class ApplicatorTest extends TestCase
                     'state' => 'Utah',
                 ],
                 '1999-12-31' => [
-                    'venue' => 'Big Cypress Seminole Reservation',
+                    'venue' => null,
                     'city' => 'Big Cypress',
                     'state' => 'Florida',
                 ],
