@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiSkeletons\Doctrine\QueryBuilder\Filter;
 
+use DateTime;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Exception;
@@ -301,10 +302,6 @@ class Applicator
      */
     private function getFieldName(string $value): string
     {
-        if (strpos($value, '.') !== false) {
-            $value = explode('.', $value);
-        }
-
         if (strpos($value, '|') === false) {
             $fieldName = trim($value);
 
@@ -356,11 +353,8 @@ class Applicator
                 case 'int':
                 case 'integer':
                     return (int) $value;
-
-                case 'bigint':
-                    // bigint is handled as a string internally to PHP and cannot be typecast to an int
-                    return $value;
-
+                case 'datetime':
+                    return new DateTime($value);
                 default:
                     switch ($operator) {
                         case Operators::LIKE:
@@ -397,12 +391,6 @@ class Applicator
      */
     private function applyWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $fieldType, string $alias): void
     {
-        if ($fieldType === 'jsonb') {
-            $this->applyJsonbWhere($queryBuilder, $columnName, $value, $operator, $fieldType);
-
-            return;
-        }
-
         switch ($operator) {
             case Operators::EQ:
             case Operators::NEQ:
@@ -439,67 +427,6 @@ class Applicator
                 $queryBuilder->addOrderBy($alias . '.' . $columnName, $value);
                 break;
             default:
-                break;
-        }
-    }
-
-    /**
-     * Handle jsonb field types
-     */
-    private function applyJsonbWhere(QueryBuilder $queryBuilder, string $columnName, mixed $value, string $operator, string $fieldType): void
-    {
-        $alias = $this->entityAlias;
-
-        $path = null;
-        if (is_array($columnName)) {
-            for ($i = 0; $i < count($columnName); $i++) {
-                if ($i === 0) {
-                    continue;
-                }
-
-                $currentColumn  = $columnName[$i];
-                $previousColumn = $i - 1 === 0
-                ? $alias . '.' . $columnName[$i - 1]
-                : $columnName[$i - 1];
-
-                if ($i === count($columnName) - 1) {
-                    $path = empty($path)
-                    ? 'JSON_GET_FIELD_AS_TEXT(' . $currentColumn . ', \'' . $previousColumn . '\')'
-                    : 'JSON_GET_FIELD_AS_TEXT(' . $path . ', \'' . $currentColumn . '\')';
-                    break;
-                }
-
-                $path = empty($path)
-                    ? 'JSON_GET_FIELD(' . $previousColumn . ', \'' . $currentColumn . '\')'
-                    : 'JSON_GET_FIELD(' . $path . ', \'' . $currentColumn . '\')';
-            }
-        } else {
-            $path = $alias . '.' . $columnName;
-        }
-
-        switch ($operator) {
-            case OperatorEnum::EQ:
-            case OperatorEnum::NEQ:
-            case OperatorEnum::IN:
-            case OperatorEnum::NOTIN:
-            case OperatorEnum::LT:
-            case OperatorEnum::LTE:
-            case OperatorEnum::GT:
-            case OperatorEnum::GTE:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator($path, $value));
-                break;
-            case OperatorEnum::ISNULL:
-            case OperatorEnum::ISNOTNULL:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator($path));
-                break;
-            case OperatorEnum::LIKE:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator('LOWER(' . $path . ')', $value));
-                break;
-            case OperatorEnum::BETWEEN:
-                $queryBuilder->andWhere($queryBuilder->expr()->$operator($path, "'" . $value[0] . "'", "'" . $value[1] . "'"));
-                break;
-            default:
-                break;
         }
     }
 }

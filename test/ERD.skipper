@@ -2,7 +2,7 @@
 <skipper version="3.2.36.1772" mvc="Without MVC" orm="Doctrine2" name="doctrine-querybuilder-filter" uuid="25d2b513-c6b7-4071-9ada-7c48f127f426">
   <module name="\Doctrine QueryBuilder Filter" local-name="Doctrine QueryBuilder Filter" namespace="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity" local-namespace="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity" export-format="Doctrine2Xml" export-path="config" uuid="d5f257f8-d854-4bae-a05d-1ed8673c7eb5">
     <entity name="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity\Artist" local-name="Artist" namespace="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity" uuid="10de66e4-a8b3-44a9-a6d0-a9fd28338fe2">
-      <field name="id" type="integer" required="true" unique="true" primary="true" auto-increment="true" uuid="9d8eb724-b4f3-414c-9d1a-48bd61008f33"/>
+      <field name="id" type="bigint" required="true" unique="true" primary="true" auto-increment="true" uuid="9d8eb724-b4f3-414c-9d1a-48bd61008f33"/>
       <field name="name" type="string" required="true" uuid="b5bf5f02-5032-4637-9d89-af0c6748d4fc"/>
     </entity>
     <entity name="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity\Performance" local-name="Performance" namespace="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity" uuid="8a04b312-72bb-4723-baac-75502524ae38">
@@ -11,7 +11,7 @@
       <field name="city" type="string" uuid="0dc8ac15-38f0-40ab-90dc-38fb939a6e86"/>
       <field name="state" type="string" uuid="b9d6c7ac-8c46-4d74-91a7-75ec51ca46be"/>
       <field name="performanceDate" type="datetime" required="true" uuid="6445ff83-a7ec-43ef-852a-a236abd3cc4c"/>
-      <field name="artist_id" type="integer" required="true" uuid="f77a7b2c-d4f7-43f1-a727-5ab5e965b128"/>
+      <field name="artist_id" type="bigint" required="true" uuid="f77a7b2c-d4f7-43f1-a727-5ab5e965b128"/>
     </entity>
     <association from="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity\Performance" to="\ApiSkeletonsTest\Doctrine\QueryBuilder\Filter\Entity\Artist" caption="Artist Performances" owner-alias="performances" inverse-alias="artist" many-owner="true" many-inverse="false" parent-required="true" uuid="4f0247e2-6d76-42f9-b56b-52306c2fa201">
       <association-field from="artist_id" to="id" uuid="8ba1d43e-9bcc-4c68-9470-e2d1ce7e8191"/>

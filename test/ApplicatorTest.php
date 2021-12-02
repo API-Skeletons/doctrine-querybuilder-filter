@@ -66,7 +66,7 @@ class ApplicatorTest extends TestCase
         $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
         $queryBuilder = $applicator($filter);
 
-        $this->assertEquals(3, sizeof($queryBuilder->getQuery()->getResult()));
+        $this->assertEquals(2, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
     public function testGte(): void
@@ -75,7 +75,7 @@ class ApplicatorTest extends TestCase
 
         $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
         $queryBuilder = $applicator($filter);
-// SHOULD BE 4
+
         $this->assertEquals(3, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
@@ -96,7 +96,7 @@ class ApplicatorTest extends TestCase
         $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
         $queryBuilder = $applicator($filter);
 
-        $this->assertEquals(4, sizeof($queryBuilder->getQuery()->getResult()));
+        $this->assertEquals(5, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
     public function testBetween(): void
@@ -181,6 +181,47 @@ class ApplicatorTest extends TestCase
         $result = $queryBuilder->getQuery()->getResult();
 
         $this->assertEquals('Soldier Field', $result[0]->getVenue());
+    }
+
+    public function testFieldDoesNotExist(): void
+    {
+        $filter = ['invalid|like' => 'Field'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $result = $queryBuilder->getQuery()->getResult();
+
+        $this->assertEquals(7, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testFilterAssociationByIdentifier(): void
+    {
+        $filter = ['artist' => '1'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $result = $queryBuilder->getQuery()->getResult();
+
+        $this->assertEquals(4, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testFilterByMultipleLevelsOfAssociations(): void
+    {
+        $filter = [
+            'performance' => [
+                'artist' => [
+                    'name' => 'Grateful Dead',
+                ],
+            ],
+        ];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Recording::class))
+            ->enableRelationships();
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(2, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
     public function testRemoveOperator(): void
@@ -277,7 +318,7 @@ class ApplicatorTest extends TestCase
             ->setEntityAlias('');
     }
 
-    public function testSetFieldAliases(): void
+    public function testSetFieldAliasesWithPipe(): void
     {
         $filter = ['province|neq' => 'Utah'];
 
@@ -286,6 +327,28 @@ class ApplicatorTest extends TestCase
         $queryBuilder = $applicator($filter);
 
         $this->assertEquals(5, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testInvalidAssociationWhenEnableRelationshipsIsTrue(): void
+    {
+        $filter = ['invalid' => 'Utah'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class))
+            ->enableRelationships();
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(7, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testSetFieldAliasesWithoutPipe(): void
+    {
+        $filter = ['province' => 'Utah'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class))
+            ->setFieldAliases(['province' => 'state']);
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(2, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
     public function testFilterableFields(): void
@@ -328,6 +391,12 @@ class ApplicatorTest extends TestCase
                     'venue' => 'Delta Center',
                     'city' => 'Salt Lake City',
                     'state' => 'Utah',
+                    'recordings' => [
+                        'SBD> D> CD-R> EAC> SHN; via Jay Serafin, Brian '
+                          . 'Walker; see info file and pub comments for notes; '
+                          . 'possibly "click track" audible on a couple tracks',
+                        'DSBD > 1C > DAT; Seeded to etree by Dan Stephens',
+                    ]
                 ],
                 '1969-11-08' => [
                     'venue' => 'Fillmore Auditorium',
@@ -350,6 +419,9 @@ class ApplicatorTest extends TestCase
                     'venue' => 'E Center',
                     'city' => 'West Valley City',
                     'state' => 'Utah',
+                    'recordings' => [
+                        'AKG480 > Aerco preamp > SBM-1',
+                    ],
                 ],
                 '1999-12-31' => [
                     'venue' => null,
@@ -372,12 +444,22 @@ class ApplicatorTest extends TestCase
 
             foreach ($performances as $performanceDate => $location) {
                 $performance = (new Entity\Performance())
-                    ->setPerformanceDate(new DateTime($performanceDate . ' 00:00:00.000000'))
+                    ->setPerformanceDate(DateTime::createFromFormat('Y-m-d H:i:s', $performanceDate . ' 00:00:00'))
                     ->setVenue($location['venue'])
                     ->setCity($location['city'])
                     ->setState($location['state'])
                     ->setArtist($artist);
                 $this->entityManager->persist($performance);
+
+                if (isset($location['recordings'])) {
+                    foreach ($location['recordings'] as $source) {
+                        $recording = (new Entity\Recording())
+                            ->setSource($source)
+                            ->setPerformance($performance);
+                        $this->entityManager->persist($recording);
+                    }
+
+                }
             }
         }
 
