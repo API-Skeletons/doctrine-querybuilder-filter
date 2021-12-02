@@ -1,5 +1,11 @@
 # Doctrine QueryBuilder Filter
 
+[![PHP Version](https://img.shields.io/badge/PHP-8.0-blue)](https://img.shields.io/badge/PHP-8.0-blue)
+[![Laravel Version](https://img.shields.io/badge/Laravel-8.x-red)](https://img.shields.io/badge/Laravel-8.x-red)
+[![Total Downloads](https://poser.pugx.org/api-skeletons/doctrine-querybuilder-filter/downloads)](//packagist.org/packages/api-skeletons/doctrine-querybuilder-filter)
+[![License](https://poser.pugx.org/api-skeletons/doctrine-querybuilder-filter/license)](//packagist.org/packages/api-skeletons/doctrine-querybuilder-filter)
+
+
 Apply filters to a QueryBuilder based on request parameters.  Supports deep queries using joins.
 This repository is intened to apply query parameters to filter entity data.
 
