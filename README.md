@@ -1,6 +1,31 @@
 # Doctrine QueryBuilder Filter
 
 Apply filters to a QueryBuilder based on request parameters.  Supports deep queries using joins.
+This repository is intened to apply query parameters to filter entity data.
+
+## Philosophy
+
+Given developers identified A and B: A == B with respect to ability and desire
+to filter and sort the entity data.
+
+The Doctrine entity to share contains
+
+```sh
+id integer,
+name string,
+startAt datetime,
+endAt datetime,
+```
+
+Developer A or B writes the API. The resource is a single Doctrine Entity and the data
+is queried using a Doctrine QueryBuilder.
+This module gives the other developer the same filtering and sorting ability to the
+Doctrine QueryBuilder, but accessed through request parameters, as the API author.
+For instance, `startAt between('2015-01-09', '2015-01-11');` and `name like ('%arlie')`
+are not common API filters for hand rolled APIs and perhaps without this module the API
+author would choose not to implement it for their reason(s). With the help of this
+module the API developer can implement complex queryability to resources without
+complicated effort thereby maintaining A == B.
 
 ## Installation
 
@@ -10,9 +35,89 @@ Run the following to install this library using [Composer](https://getcomposer.o
 composer require api-skeletons/doctrine-querybuilder-filter
 ```
 
+## Filters
+
+The pattern for creating a filter is `filter[fieldName|operator]=value`
+This pattern is an easy way to define complex queries utilizing all the filtering
+capabilities of the QueryBuilder.
+
+The following URL will provide a LIKE filter for a user's `name`:
+
+```sh
+http://localhost/api/user?filter[name|like]=John
+```
+
+These operators are supported:
+
+* eq - equals.  If no operator is specified then this is the default
+* neq - does not equal
+* gt - greater than
+* gte - greater than or equals
+* lt - less than
+* lte - less than or equals
+* between - between two values comma delmited e.g. `filter[id|between]=1,5`
+* like - a fuzzy search which wraps the value in wildcards
+* in - a list of values to match comma delmited e.g. `filter[id|in]=1,2,3]`
+* notin - the opposite of an `in` operator
+* isnull - any value is acceptable a only the field will be checked for null
+* isnotnull - the opposite of an `isNull` operator
+* sort - sort the result on the field either `asc` or `desc`
+
+You may use as many filters as you wish.  Filters operate on the field names of
+the entity and on the association names.  This allows you to filter on an
+assocaition.  For instance, to filter a list of users by company where the id
+of the company is known and the Doctrine metadata is correct you may filter
+like this:
+
+```sh
+http://localhost/api/user?filter[company]=10
+```
+
+So even though there is not a field named company there is a relationship and
+that is filterable though this tool.
+
+### Filtering on single entities
+
+The configuration of the Applicator allows you to enable assocaition filtering,
+but this is disabled by default.  So, assuming the default setting, this is a
+complex filter on a single entity:
+
+```sh
+http://localhost/api/user?filter[company|neq]=15&filter[name]=John
+```
+
+### Filtering on the hierarcy of entities
+
+The configuration of the Applicator allows you to enable assocation filtering.
+This means you can filter the current entity based on fields with an association
+with the current entity and you may do so as deep as you wish.
+
+In this example we'll pull user data based on their company by name:
+
+```sh
+http://localhost/api/user?filter[company][name|eq]=AAA
+```
+
+In this example we'll pull user data based on their company by company type by
+company type name:
+
+```sh
+http://localhost/api/user?filter[company][companyType][name|neq]=Consultant
+```
+
+Before you get too concerned about this ability remember you can modify the
+QueryBuilder after it has had filters applied to it so if you need to apply
+security settings that is supported.
+
+### A note on sorting
+
+While sorting isn't by strict definition a filter, it falls into the same
+context when requesting data.  You can sort by multiple fields and you can
+sort across associations (if enabled).  Sorting is prioritized left to right.
+
 ## Use
 
-This is the minimum required to use this library
+This is the minimum required to use this library:
 
 ```php
 use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
@@ -38,71 +143,89 @@ $queryBuilder = $applicator($_REQUEST['filter']);
 $entityAliasMap = $applicator->getEntityAliasMap();
 ```
 
+After a QueryBuilder is returned with the filters applied to it you may modify
+it as desired before using it to fetch your result.
 
----
+## Real world Laravel example
 
-## Examples
+In this example data from the `Entity\Style` entity is returned using
+[HAL](https://github.com/API-Skeletons/laravel-hal) in a paginated respose
+in a controller action.
 
-example1:
-
-      url = http://localhost/advertisements?filter[created_at]=2018-07-22T18:48:16-03:00
-      query =
-             SELECT advertisement
-             FROM Entity\Advertisement advertisement
-             WHERE advertisement.createdAt = '2018-07-22 18:48:16'
- 
-        
- example2:
- 
-        url = http://localhost/advertisements?filter[id]=1,2
-        query = 
-                SELECT advertisement
-                FROM Entity\Advertisement advertisement
-                WHERE advertisement.id IN (1, 2)
-
-example3:
-
-      url = http://localhost/advertisements?filter[created_at|between]=2018-07-22T18:48:16-03:00,2018-07-22T18:48:16-03:00
-      query =
-             SELECT advertisement
-             FROM Entity\Advertisement advertisement
-             WHERE advertisement.createdAt BETWEEN '2018-07-22 18:48:16' AND '2018-07-22 18:48:16'
-
-example 4:
-
-      url = http://localhost/advertisements?filter[customer_product][customer][name|like]=cor
-      query =
-             SELECT advertisement
-             FROM Entity\Advertisement advertisement
-             INNER JOIN Entity\CustomerProduct customer_product
-             WITH advertisement.customerProductId = customer_product.id
-             INNER JOIN Entity\Customer customer
-             WITH customer_product.customerId = customer.id
-             WHERE LOWER(customer.name) LIKE '%cor%'
+```php
+use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
+use Doctrine\ORM\Tools\Pagination\Paginator;
+use HAL;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 
-# Configuration Filter with Joins
+public function fetchAll(Request $request)
+{
+    $filter = $request->query()['filter'] ?? [];
+    $page = $request->query()['page'] ?? 1;
 
-In your entity add a static attribute $joins with this structure:
+    $applicator = (new Applicator(app('em'), Entity\Style::class))
+        ->enableRelationships(true);
+    $queryBuilder = $applicator($filter);
 
-      protected static $entityJoins [
-       'customer_product' => ['entity' => CustomerProduct::class, 'condition' => 'advertisement.customerProductId = customer_product.id'],
-       'site' => ['entity' => Site::class, 'condition' => 'advertisement.siteId = site.id']
-     ];
+    $paginator = new Paginator($queryBuilder);
+    $paginator->getQuery()
+        ->setFirstResult(25 * ($page - 1)) // Page is 0 indexed in query
+        ->setMaxResults(25)
+        ;
 
+    $data = (new LengthAwarePaginator(iterator_to_array($paginator->getIterator()), $paginator->count(), 25))
+        ->appends($request->query())
+        ->withPath(route('api.style::fetchAll'))
+        ;
 
-## Available Operators
+    return HAL::paginate('style', $data)->toArray();
+}
+```
 
-* eq: equals
-* neq: not equals
-* gt: greater than
-* gte: greater than or equals
-* lt: less than
-* lte: less than or equals
-* between: between values.  Delimit with a comma
-* like: a fuzzy query '%value%'
-* in: in an array of values.  Delimit with a comma
-* notin: not in an arry of values.  Delimit with a comma
-* isnull: is the field null?
-* isnotnull: is the field not null?
+## Configuration
 
+Using the Applicator is strait-forward and many options for configuring it are
+available.  Begin by creating the Applicator then run configuration functions:
+
+```php
+$applicator = new Applicator($entityManager, Entity\Style::class);
+```
+
+### enableAssociations()
+
+This configuration method turns on deep filtering by using the Doctrine
+metadata to traverse the ORM through existing joins to the target entity.
+This is only possible in a Doctrine installation with complete metadata and
+proper relationships between entities defined in the metadata.
+
+### removeOperator(string|array)
+
+If you want to disable any operator you may remove it.  A good example is the
+`like` operator which could result in expensive queries.
+
+### setEntityAlias(string)
+
+The default alias used when creating filters for the target entity in the
+QueryBuilder is `entity`. You may want to change this so you know the alias
+after the QueryBuilder is returned and you can add additional parameters to it.
+
+### setFieldAliases(array)
+
+If you want the filter to alias a field instead of using the ORM field name
+(such as using naming strategies in hydrators) you may pass an array of
+`[alias] => field` values so mapping can be adjusted.
+
+### setFilterableFields(array)
+
+By default all fields on the target entity can be filtered.  If you want to
+limit which fields your users can create filters for then pass those field
+names in this array.
+
+### getEntityAliasMap()
+
+This method is for post-processing of the target entity.  When users use
+deep filtering using `enableAssociations()` aliases are created for every
+entity joined to the original entity query.  This method returns an array of
+`[entityClass] => alias` for all entities joined in the QueryBuilder.

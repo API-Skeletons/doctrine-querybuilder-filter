@@ -15,9 +15,9 @@ final class Operators
     public const BETWEEN   = 'between';
     public const LIKE      = 'like';
     public const IN        = 'in';
-    public const NOTIN     = 'notIn';
-    public const ISNULL    = 'isNull';
-    public const ISNOTNULL = 'isNotNull';
+    public const NOTIN     = 'notin';
+    public const ISNULL    = 'isnull';
+    public const ISNOTNULL = 'isnotnull';
     public const SORT      = 'sort';
 
     /**
