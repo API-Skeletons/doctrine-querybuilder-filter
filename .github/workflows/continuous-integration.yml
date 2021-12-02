@@ -1,25 +1,11 @@
 name: "Continuous Integration"
 
 on:
-  workflow_call:
-    inputs:
-      php-versions:
-        description: "The PHP versions to use when running the job"
-        default: '["7.2", "7.3", "7.4", "8.0"]'
-        required: false
-        type: "string"
-      composer-root-version:
-        description: "The version of the package being tested, in case of circular dependencies."
-        required: false
-        type: "string"
-      composer-options:
-        description: "Additional flags for the composer install command."
-        default: "--prefer-dist"
-        required: false
-        type: "string"
-
-env:
-  fail-fast: true
+  pull_request:
+  push:
+    branches:
+      - '[0-9]+.[0-9]+.x'
+      - 'refs/pull/*'
 
 jobs:
   phpunit:
@@ -28,12 +14,27 @@ jobs:
 
     strategy:
       matrix:
-        php-version: "${{ fromJson(inputs.php-versions) }}"
+        php-version:
+          - "7.4"
+          - "8.0"
+          - "8.1"
         dependencies:
           - "highest"
+        laminas-form-version:
+          - "3.0.0"
+          - "2.17.0"
+        laminas-cache-version:
+          - "3.1.2"
+          - "2.13.0"
         include:
-          - php-version: "${{ fromJson(inputs.php-versions)[0] }}"
+          - php-version: "7.3"
             dependencies: "lowest"
+            laminas-form-version: "2.17.0"
+            laminas-cache-version: "2.13.0"
+          - php-version: "7.3"
+            dependencies: "lowest"
+            laminas-form-version: "3.0.0"
+            laminas-cache-version: "3.1.2"
 
     steps:
       - name: "Checkout"
@@ -41,40 +42,45 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: "Install PHP with PCOV"
+      - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
-        if: "${{ matrix.php-version != '7.1' }}"
         with:
           php-version: "${{ matrix.php-version }}"
           coverage: "pcov"
           ini-values: "zend.assertions=1"
 
-      - name: "Install PHP with XDebug"
-        uses: "shivammathur/setup-php@v2"
-        if: "${{ matrix.php-version == '7.1' }}"
-        with:
-          php-version: "${{ matrix.php-version }}"
-          coverage: "xdebug"
-          ini-values: "zend.assertions=1"
+      - name: "Require specific laminas-form version"
+        if: "! startsWith(matrix.php-version, '8')"
+        run: "composer require laminas/laminas-form ^${{ matrix.laminas-form-version }} --no-update"
 
-      - name: "Set COMPOSER_ROOT_VERSION"
-        run: |
-          echo "COMPOSER_ROOT_VERSION=${{ inputs.composer-root-version }}" >> $GITHUB_ENV
-        if: "${{ inputs.composer-root-version }}"
+      - name: "Require specific laminas-form version (--ignore-platform-req=php)"
+        if: "startsWith(matrix.php-version, '8')"
+        run: "composer require laminas/laminas-form ^${{ matrix.laminas-form-version }} --no-update --ignore-platform-req=php"
+
+      - name: "Require specific laminas-cache version"
+        run: "composer require laminas/laminas-cache ^${{ matrix.laminas-cache-version }} --no-update"
 
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
+        if: "! startsWith(matrix.php-version, '8')"
         with:
           dependency-versions: "${{ matrix.dependencies }}"
-          composer-options: "${{ inputs.composer-options }}"
+          composer-options: "--prefer-dist"
+
+      - name: "Install dependencies with Composer (--ignore-platform-req=php)"
+        uses: "ramsey/composer-install@v1"
+        if: "startsWith(matrix.php-version, '8')"
+        with:
+          dependency-versions: "${{ matrix.dependencies }}"
+          composer-options: "--prefer-dist --ignore-platform-req=php"
 
       - name: "Run PHPUnit"
-        run: "vendor/bin/phpunit --coverage-clover=coverage.xml"
+        run: "composer test-coverage"
 
       - name: "Upload coverage file"
         uses: "actions/upload-artifact@v2"
         with:
-          name: "phpunit-${{ matrix.php-version }}-${{ matrix.dependencies }}.coverage"
+          name: "phpunit-${{ matrix.php-version }}-${{ matrix.dependencies }}-${{ matrix.laminas-form-version }}.coverage"
           path: "coverage.xml"
 
   upload_coverage:
