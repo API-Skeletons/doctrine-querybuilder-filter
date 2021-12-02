@@ -8,30 +8,6 @@
 Apply filters to a QueryBuilder based on request parameters.  Supports deep queries using joins.
 This repository is intened to apply query parameters to filter entity data.
 
-## Philosophy
-
-Given developers identified A and B: A == B with respect to ability and desire
-to filter and sort the entity data.
-
-The Doctrine entity to share contains
-
-```sh
-id integer,
-name string,
-startAt datetime,
-endAt datetime,
-```
-
-Developer A or B writes the API. The resource is a single Doctrine Entity and the data
-is queried using a Doctrine QueryBuilder.
-This module gives the other developer the same filtering and sorting ability to the
-Doctrine QueryBuilder, but accessed through request parameters, as the API author.
-For instance, `startAt between('2015-01-09', '2015-01-11');` and `name like ('%arlie')`
-are not common API filters for hand rolled APIs and perhaps without this module the API
-author would choose not to implement it for their reason(s). With the help of this
-module the API developer can implement complex queryability to resources without
-complicated effort thereby maintaining A == B.
-
 ## Installation
 
 Run the following to install this library using [Composer](https://getcomposer.org/):
