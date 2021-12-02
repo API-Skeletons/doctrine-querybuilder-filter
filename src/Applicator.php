@@ -328,7 +328,7 @@ class Applicator
      * Given a query field, extract the operator
      * `name|neq` becomes `neq`
      */
-    private function getOperator(string $query): string
+    private function getOperator(string $query): ?string
     {
         if (strpos($query, '|') === false && in_array(Operators::EQ, $this->operators)) {
             return Operators::EQ;

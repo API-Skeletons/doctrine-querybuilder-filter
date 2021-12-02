@@ -15,16 +15,24 @@
     ],
     "require": {
         "php": "^8.0",
-        "doctrine/collections": "^1.6"
+        "doctrine/orm": "^2.6",
+        "doctrine/dbal": "^3.1.1",
+        "symfony/cache": "^5.3"
     },
     "autoload": {
         "psr-4": {
             "ApiSkeletons\\Doctrine\\QueryBuilder\\Filter\\": "src"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "ApiSkeletonsTest\\Doctrine\\QueryBuilder\\Filter\\": "test"
+        }
+    },
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require-dev": {
-        "doctrine/coding-standard": "^9.0"
+        "doctrine/coding-standard": "^9.0",
+        "phpunit/phpunit": "^9"
     }
 }

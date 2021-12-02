@@ -4,3 +4,5 @@
 *.log
 .phpcs-cache
 composer.lock
+/coverage
+.phpunit.cache/
