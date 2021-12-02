@@ -1,56 +1,20 @@
 name: "Coding Standards"
 
 on:
-  workflow_call:
-    inputs:
-      php-version:
-        description: "The PHP version to use when running the job"
-        default: "8.0"
-        required: false
-        type: "string"
-      composer-root-version:
-        description: "The version of the package being tested, in case of circular dependencies."
-        required: false
-        type: "string"
-      composer-options:
-        description: "Additional flags for the composer install command."
-        default: "--prefer-dist"
-        required: false
-        type: "string"
+  pull_request:
+    branches:
+      - "*.x"
+      - "main"
+  push:
+    branches:
+      - "*.x"
+      - "main"
 
 jobs:
   coding-standards:
     name: "Coding Standards"
-    runs-on: "ubuntu-20.04"
-
-    strategy:
-      matrix:
-        php-version:
-          - "${{ inputs.php-version }}"
-
-    steps:
-      - name: "Checkout"
-        uses: "actions/checkout@v2"
-
-      - name: "Install PHP"
-        uses: "shivammathur/setup-php@v2"
-        with:
-          coverage: "none"
-          php-version: "${{ matrix.php-version }}"
-          tools: "cs2pr"
-
-      - name: "Set COMPOSER_ROOT_VERSION"
-        run: |
-          echo "COMPOSER_ROOT_VERSION=${{ inputs.composer-root-version }}" >> $GITHUB_ENV
-        if: "${{ inputs.composer-root-version }}"
-
-      - name: "Install dependencies with Composer"
-        uses: "ramsey/composer-install@v1"
-        with:
-          dependency-versions: "highest"
-          composer-options: "${{ inputs.composer-options }}"
-
-      # https://github.com/doctrine/.github/issues/3
-      - name: "Run PHP_CodeSniffer"
-        run: "vendor/bin/phpcs -q --no-colors --report=checkstyle | cs2pr"
+    uses: "doctrine/.github/.github/workflows/coding-standards.yml@1.3.0"
+    with:
+      php-version: '8.0'
+      composer-options: '--prefer-dist --ignore-platform-req=php'
 

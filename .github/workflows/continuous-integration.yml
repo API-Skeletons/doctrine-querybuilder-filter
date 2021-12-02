@@ -1,25 +1,14 @@
 name: "Continuous Integration"
 
 on:
-  workflow_call:
-    inputs:
-      php-versions:
-        description: "The PHP versions to use when running the job"
-        default: '["7.2", "7.3", "7.4", "8.0"]'
-        required: false
-        type: "string"
-      composer-root-version:
-        description: "The version of the package being tested, in case of circular dependencies."
-        required: false
-        type: "string"
-      composer-options:
-        description: "Additional flags for the composer install command."
-        default: "--prefer-dist"
-        required: false
-        type: "string"
-
-env:
-  fail-fast: true
+  pull_request:
+    branches:
+      - "*.x"
+      - "main"
+  push:
+    branches:
+      - "*.x"
+      - "main"
 
 jobs:
   phpunit:
@@ -27,13 +16,23 @@ jobs:
     runs-on: "ubuntu-20.04"
 
     strategy:
+      fail-fast: false
       matrix:
-        php-version: "${{ fromJson(inputs.php-versions) }}"
+        php-version:
+          - "8.0"
+          - "8.1"
         dependencies:
           - "highest"
+        optional-dependencies:
+          - true
+          - false
         include:
-          - php-version: "${{ fromJson(inputs.php-versions)[0] }}"
-            dependencies: "lowest"
+          -   php-version: "8.0"
+              dependencies: "lowest"
+              optional-dependencies: false
+          -   php-version: "8.0"
+              dependencies: "lowest"
+              optional-dependencies: true
 
     steps:
       - name: "Checkout"
@@ -41,32 +40,27 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: "Install PHP with PCOV"
+      - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
-        if: "${{ matrix.php-version != '7.1' }}"
         with:
           php-version: "${{ matrix.php-version }}"
           coverage: "pcov"
           ini-values: "zend.assertions=1"
-
-      - name: "Install PHP with XDebug"
-        uses: "shivammathur/setup-php@v2"
-        if: "${{ matrix.php-version == '7.1' }}"
-        with:
-          php-version: "${{ matrix.php-version }}"
-          coverage: "xdebug"
-          ini-values: "zend.assertions=1"
-
-      - name: "Set COMPOSER_ROOT_VERSION"
-        run: |
-          echo "COMPOSER_ROOT_VERSION=${{ inputs.composer-root-version }}" >> $GITHUB_ENV
-        if: "${{ inputs.composer-root-version }}"
+          extensions: "pdo_mysql"
 
       - name: "Install dependencies with Composer"
         uses: "ramsey/composer-install@v1"
+        if: "! startsWith(matrix.php-version, '8')"
         with:
           dependency-versions: "${{ matrix.dependencies }}"
-          composer-options: "${{ inputs.composer-options }}"
+          composer-options: "--prefer-dist --no-suggest"
+
+      - name: "Install dependencies with Composer (--ignore-platform-req=php)"
+        uses: "ramsey/composer-install@v1"
+        if: "startsWith(matrix.php-version, '8')"
+        with:
+          dependency-versions: "${{ matrix.dependencies }}"
+          composer-options: "--prefer-dist --no-suggest --ignore-platform-req=php"
 
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit --coverage-clover=coverage.xml"
@@ -74,7 +68,7 @@ jobs:
       - name: "Upload coverage file"
         uses: "actions/upload-artifact@v2"
         with:
-          name: "phpunit-${{ matrix.php-version }}-${{ matrix.dependencies }}.coverage"
+          name: "phpunit-${{ matrix.php-version }}-${{ matrix.dependencies }}-${{ matrix.dbal-version }}.coverage"
           path: "coverage.xml"
 
   upload_coverage:
@@ -98,4 +92,3 @@ jobs:
         uses: "codecov/codecov-action@v1"
         with:
           directory: "reports"
-

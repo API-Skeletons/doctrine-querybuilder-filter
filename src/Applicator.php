@@ -11,7 +11,6 @@ use Exception;
 
 use function array_map;
 use function array_search;
-use function count;
 use function explode;
 use function in_array;
 use function is_array;
@@ -353,8 +352,10 @@ class Applicator
                 case 'int':
                 case 'integer':
                     return (int) $value;
+
                 case 'datetime':
                     return new DateTime($value);
+
                 default:
                     switch ($operator) {
                         case Operators::LIKE:
