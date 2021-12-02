@@ -73,7 +73,7 @@ like this:
 http://localhost/api/user?filter[company]=10
 ```
 
-So even though there is not a field named company there is a relationship and
+So even though there is not a field named company there is a association and
 that is filterable though this tool.
 
 ### Filtering on single entities
@@ -149,7 +149,7 @@ it as desired before using it to fetch your result.
 ## Real world Laravel example
 
 In this example data from the `Entity\Style` entity is returned using
-[HAL](https://github.com/API-Skeletons/laravel-hal) in a paginated respose
+[HAL](https://github.com/API-Skeletons/laravel-hal) in a paginated response
 in a controller action.
 
 ```php
@@ -198,7 +198,7 @@ $applicator = new Applicator($entityManager, Entity\Style::class);
 This configuration method turns on deep filtering by using the Doctrine
 metadata to traverse the ORM through existing joins to the target entity.
 This is only possible in a Doctrine installation with complete metadata and
-proper relationships between entities defined in the metadata.
+proper associations between entities defined in the metadata.
 
 ### removeOperator(string|array)
 
