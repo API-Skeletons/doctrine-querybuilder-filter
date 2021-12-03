@@ -1,6 +1,6 @@
 {
     "name": "api-skeletons/doctrine-querybuilder-filter",
-    "description": "Create a QueryBuilder based on `filter[fieldName|operator]=value`",
+    "description": "Filter a QueryBuilder with filter[fieldName|operator]=value",
     "type": "library",
     "license": "MIT",
     "authors": [
