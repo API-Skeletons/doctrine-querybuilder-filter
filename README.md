@@ -154,8 +154,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 public function fetchAll(Request $request)
 {
-    $filter = $request->query()['filter'] ?? [];
-    $page = $request->query()['page'] ?? 1;
+    $filter = $request->query()['filter'];
+    if (! is_array($filter)) {
+        $filter = [];
+    ]
+    
+    $page = (int) $request->query()['page'] ?? 1;
+    if ($page < 1) {
+        $page = 1;
+    }
 
     $applicator = (new Applicator(app('em'), Entity\Style::class))
         ->enableRelationships(true);
