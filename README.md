@@ -140,7 +140,7 @@ it as desired before using it to fetch your result.
 
 ## Real world Laravel example
 
-In this example data from the `Entity\Style` entity is returned using
+In this example, data from the `Entity\Style` entity is returned using
 [HAL](https://github.com/API-Skeletons/laravel-hal) in a paginated response
 in a controller action.
 
