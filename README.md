@@ -18,6 +18,15 @@ Run the following to install this library using [Composer](https://getcomposer.o
 composer require api-skeletons/doctrine-querybuilder-filter
 ```
 
+## Quick Start
+
+```php
+use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
+
+$applicator = (new Applicator($entityManager, Entity\User::class));
+$queryBuilder = $applicator($_REQUEST['filter']);
+```
+
 ## Filters
 
 The pattern for creating a filter is `filter[fieldName|operator]=value`
