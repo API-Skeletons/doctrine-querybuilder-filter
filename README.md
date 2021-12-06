@@ -51,7 +51,7 @@ These operators are supported:
 * like - a fuzzy search which wraps the value in wildcards
 * in - a list of values to match comma delmited e.g. `filter[id|in]=1,2,3]`
 * notin - the opposite of an `in` operator
-* isnull - any value is acceptable a only the field will be checked for null
+* isnull - any value is acceptable; the field will be checked for null
 * isnotnull - the opposite of an `isNull` operator
 * sort - sort the result on the field either `asc` or `desc`
 
