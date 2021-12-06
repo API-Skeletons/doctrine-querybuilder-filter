@@ -154,7 +154,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 public function fetchAll(Request $request)
 {
-    $filter = $request->query()['filter'];
+    $filter = $request->query()['filter'] ?? [];
     if (! is_array($filter)) {
         $filter = [];
     ]
