@@ -179,7 +179,7 @@ class Applicator
      * This is the entry point to create a QueryBuidler based on passed
      * filters
      *
-     * @param string[] $filters
+     * @param mixed[] $filters
      */
     public function __invoke(array $filters): QueryBuilder
     {
@@ -311,6 +311,9 @@ class Applicator
             return $fieldName;
         }
 
+        /**
+         * @psalm-suppress PossiblyFalseArgument
+         */
         $fieldName = trim(substr($value, 0, strpos($value, '|')));
 
         if (isset($this->fieldAliases[$fieldName])) {
@@ -330,6 +333,9 @@ class Applicator
             return Operators::EQ;
         }
 
+        /**
+         * @psalm-suppress PossiblyFalseOperand
+         */
         $query = trim(substr($query, strpos($query, '|') + 1));
         $query = strtolower($query);
 
