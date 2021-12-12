@@ -65,7 +65,7 @@ like this:
 http://localhost/api/user?filter[company]=10
 ```
 
-So even though there is not a field named company there is a association and
+So even though there is not a field named company there is an association and
 that is filterable though this tool.
 
 ### Filtering on single entities
