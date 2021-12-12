@@ -214,7 +214,7 @@ after the QueryBuilder is returned and you can add additional parameters to it.
 
 If you want the filter to alias a field instead of using the ORM field name
 (such as using naming strategies in hydrators) you may pass an array of
-`[alias] => field` values so mapping can be adjusted.
+`[alias => field]` values so mapping can be adjusted.
 
 ### setFilterableFields(array)
 
@@ -227,4 +227,4 @@ names in this array.
 This method is for post-processing of the target entity.  When users use
 deep filtering using `enableAssociations()` aliases are created for every
 entity joined to the original entity query.  This method returns an array of
-`[entityClass] => alias` for all entities joined in the QueryBuilder.
+`[entityClass => alias]` for all entities joined in the QueryBuilder.
