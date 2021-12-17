@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/API-Skeletons/doctrine-querybuilder-filter/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/API-Skeletons/doctrine-querybuilder-filter/actions/workflows/continuous-integration.yml?query=branch%3Amain)
 [![Code Coverage](https://codecov.io/gh/API-Skeletons/doctrine-querybuilder-filter/branch/main/graphs/badge.svg)](https://codecov.io/gh/API-Skeletons/doctrine-querybuilder-filter/branch/main)
-[![PHP Version](https://img.shields.io/badge/PHP-8.0-blue)](https://img.shields.io/badge/PHP-8.0-blue)
+[![PHP Version](https://img.shields.io/badge/PHP-8.0%2b-blue)](https://img.shields.io/badge/PHP-8.0%2b-blue)
 [![Total Downloads](https://poser.pugx.org/api-skeletons/doctrine-querybuilder-filter/downloads)](//packagist.org/packages/api-skeletons/doctrine-querybuilder-filter)
 [![License](https://poser.pugx.org/api-skeletons/doctrine-querybuilder-filter/license)](//packagist.org/packages/api-skeletons/doctrine-querybuilder-filter)
 
