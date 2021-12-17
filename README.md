@@ -23,7 +23,7 @@ composer require api-skeletons/doctrine-querybuilder-filter
 ```php
 use ApiSkeletons\Doctrine\QueryBuilder\Filter\Applicator;
 
-$applicator = (new Applicator($entityManager, Entity\User::class));
+$applicator = new Applicator($entityManager, Entity\User::class);
 $queryBuilder = $applicator($_REQUEST['filter']);
 ```
 
