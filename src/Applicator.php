@@ -242,9 +242,18 @@ class Applicator
         if (isset($mappingName)) {
             $associationMapping       = $classMetadata->getAssociationMapping($mappingName);
             $sourceAssociationMapping = $queryBuilder->getEntityManager()->getClassMetadata($associationMapping['sourceEntity']);
-            $sourceIdentifierMapping  = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
-            $fieldType                = $sourceIdentifierMapping['type'];
+            /**
+             * @psalm-suppress UndefinedDocblockClass
+             */
+            $sourceIdentifierMapping = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
+            /**
+             * @psalm-suppress UndefinedDocblockClass
+             */
+            $fieldType = $sourceIdentifierMapping['type'];
         } else {
+            /**
+             * @psalm-suppress UndefinedDocblockClass
+             */
             $fieldMapping = $classMetadata->getFieldMapping($fieldName);
             $fieldType    = $fieldMapping['type'];
         }
