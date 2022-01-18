@@ -119,6 +119,26 @@ class ApplicatorTest extends TestCase
         $this->assertEquals(1, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
+    public function testStartsWith(): void
+    {
+        $filter = ['name|startswith' => 'Phi'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Artist::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(1, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
+    public function testEndsWith(): void
+    {
+        $filter = ['name|endswith' => 'Dead'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Artist::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(1, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
     public function testIn(): void
     {
         $filter = ['id|in' => '1,3'];

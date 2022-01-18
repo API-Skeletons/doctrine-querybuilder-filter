@@ -242,9 +242,18 @@ class Applicator
         if (isset($mappingName)) {
             $associationMapping       = $classMetadata->getAssociationMapping($mappingName);
             $sourceAssociationMapping = $queryBuilder->getEntityManager()->getClassMetadata($associationMapping['sourceEntity']);
-            $sourceIdentifierMapping  = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
-            $fieldType                = $sourceIdentifierMapping['type'];
+            /**
+             * @psalm-suppress UndefinedDocblockClass
+             */
+            $sourceIdentifierMapping = $sourceAssociationMapping->getFieldMapping($sourceAssociationMapping->getIdentifier()[0]);
+            /**
+             * @psalm-suppress UndefinedDocblockClass
+             */
+            $fieldType = $sourceIdentifierMapping['type'];
         } else {
+            /**
+             * @psalm-suppress UndefinedDocblockClass
+             */
             $fieldMapping = $classMetadata->getFieldMapping($fieldName);
             $fieldType    = $fieldMapping['type'];
         }
@@ -367,6 +376,12 @@ class Applicator
                         case Operators::LIKE:
                             return '%' . $value . '%';
 
+                        case Operators::STARTSWITH:
+                            return $value . '%';
+
+                        case Operators::ENDSWITH:
+                            return '%' . $value;
+
                         case Operators::SORT:
                             return strtolower($value) === 'asc' ? 'asc' : 'desc';
 
@@ -417,6 +432,8 @@ class Applicator
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName));
                 break;
             case Operators::LIKE:
+            case Operators::STARTSWITH:
+            case Operators::ENDSWITH:
                 $uniqid = 'q' . uniqid(); // Cannot start a parameter with a number
                 $queryBuilder
                     ->andWhere($queryBuilder->expr()->like($alias . '.' . $columnName, ':' . $uniqid))
