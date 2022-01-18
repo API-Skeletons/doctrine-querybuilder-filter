@@ -367,6 +367,12 @@ class Applicator
                         case Operators::LIKE:
                             return '%' . $value . '%';
 
+                        case Operators::STARTSWITH:
+                            return $value . '%';
+
+                        case Operators::ENDSWITH:
+                            return '%' . $value;
+
                         case Operators::SORT:
                             return strtolower($value) === 'asc' ? 'asc' : 'desc';
 
@@ -417,6 +423,8 @@ class Applicator
                 $queryBuilder->andWhere($queryBuilder->expr()->$operator($alias . '.' . $columnName));
                 break;
             case Operators::LIKE:
+            case Operators::STARTSWITH:
+            case Operators::ENDSWITH:
                 $uniqid = 'q' . uniqid(); // Cannot start a parameter with a number
                 $queryBuilder
                     ->andWhere($queryBuilder->expr()->like($alias . '.' . $columnName, ':' . $uniqid))

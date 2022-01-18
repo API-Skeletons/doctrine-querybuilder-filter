@@ -49,6 +49,8 @@ These operators are supported:
 * lte - less than or equals
 * between - between two values comma delmited e.g. `filter[id|between]=1,5`
 * like - a fuzzy search which wraps the value in wildcards
+* startswith - a `like` operator with a wildcard on the right
+* endswith - a `like` operator with a wildcard on the left
 * in - a list of values to match comma delmited e.g. `filter[id|in]=1,2,3]`
 * notin - the opposite of an `in` operator
 * isnull - any value is acceptable; the field will be checked for null
