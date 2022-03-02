@@ -363,27 +363,27 @@ class Applicator
         $value = trim($value);
 
         if (strpos($value, ',') === false) {
-            switch ($fieldType) {
-                case 'int':
-                case 'integer':
-                    return (int) $value;
+            switch ($operator) {
+                case Operators::LIKE:
+                    return '%' . $value . '%';
 
-                case 'datetime':
-                    return new DateTime($value);
+                case Operators::STARTSWITH:
+                    return $value . '%';
+
+                case Operators::ENDSWITH:
+                    return '%' . $value;
+
+                case Operators::SORT:
+                    return strtolower($value) === 'asc' ? 'asc' : 'desc';
 
                 default:
-                    switch ($operator) {
-                        case Operators::LIKE:
-                            return '%' . $value . '%';
+                    switch ($fieldType) {
+                        case 'int':
+                        case 'integer':
+                            return (int) $value;
 
-                        case Operators::STARTSWITH:
-                            return $value . '%';
-
-                        case Operators::ENDSWITH:
-                            return '%' . $value;
-
-                        case Operators::SORT:
-                            return strtolower($value) === 'asc' ? 'asc' : 'desc';
+                        case 'datetime':
+                            return new DateTime($value);
 
                         default:
                             return $value;
@@ -394,6 +394,8 @@ class Applicator
         $value = explode(',', $value);
         $value = array_map(static function ($value) use ($fieldType) {
             switch ($fieldType) {
+                case 'tinyint':
+                case 'smallint':
                 case 'int':
                 case 'integer':
                     return (int) $value;
