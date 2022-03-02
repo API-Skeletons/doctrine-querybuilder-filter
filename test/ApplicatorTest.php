@@ -109,6 +109,16 @@ class ApplicatorTest extends TestCase
         $this->assertEquals(3, sizeof($queryBuilder->getQuery()->getResult()));
     }
 
+    public function testBetweenDates(): void
+    {
+        $filter = ['performanceDate|between' => '1995-02-21T00:00:00+00:00,1995-07-09T00:00:00+00:00'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $this->assertEquals(2, sizeof($queryBuilder->getQuery()->getResult()));
+    }
+
     public function testLike(): void
     {
         $filter = ['name|like' => 'ish'];

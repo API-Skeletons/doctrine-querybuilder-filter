@@ -400,8 +400,10 @@ class Applicator
                 case 'integer':
                     return (int) $value;
 
-                case 'bigint':
-                    // bigint is handled as a string internally to PHP and cannot be typecast to an int
+                case 'datetime':
+                    return new DateTime($value);
+
+                case 'bigint': // bigint is handled as a string internally to PHP
                 default:
                     return $value;
             }
