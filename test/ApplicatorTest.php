@@ -203,6 +203,18 @@ class ApplicatorTest extends TestCase
         $this->assertEquals('Soldier Field', $result[0]->getVenue());
     }
 
+    public function testSortIntDesc(): void
+    {
+        $filter = ['id|sort' => 'desc'];
+
+        $applicator = (new Applicator($this->entityManager, Entity\Performance::class));
+        $queryBuilder = $applicator($filter);
+
+        $result = $queryBuilder->getQuery()->getResult();
+
+        $this->assertEquals(7, $result[0]->getId());
+    }
+
     public function testFieldDoesNotExist(): void
     {
         $filter = ['invalid|like' => 'Field'];
