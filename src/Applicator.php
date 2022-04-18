@@ -259,8 +259,8 @@ class Applicator
         }
 
         if ($operator) {
-            $formattedValue                     = $this->formatValue($value, $fieldType, $operator);
-            $this->entityAliasMap[$entityClass] = $alias;
+            $formattedValue               = $this->formatValue($value, $fieldType, $operator);
+            $this->entityAliasMap[$alias] = $entityClass;
             $this->applyWhere($queryBuilder, $fieldName, $formattedValue, $operator, $fieldType, $alias);
         }
 
@@ -291,7 +291,7 @@ class Applicator
         }
 
         $queryBuilder->join($alias . '.' . $query, $query);
-        $this->entityAliasMap[$entityClass] = $alias;
+        $this->entityAliasMap[$alias] = $entityClass;
 
         foreach ($value as $q => $v) {
             if (is_array($v)) {

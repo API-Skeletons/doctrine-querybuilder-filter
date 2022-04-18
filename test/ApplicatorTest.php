@@ -347,7 +347,11 @@ class ApplicatorTest extends TestCase
             ->setEntityAlias('row');
         $queryBuilder = $applicator($filter);
 
-        $this->assertTrue(in_array('row', $applicator->getEntityAliasMap()));
+        $entityAliasMap = $applicator->getEntityAliasMap();
+        $entityAliasMapKeys = array_keys($entityAliasMap);
+
+        $this->assertEquals(Entity\Performance::class, reset($entityAliasMap));
+        $this->assertEquals('row', reset($entityAliasMapKeys));
     }
 
     public function testSetEntityAliasToEmptyThrowsException(): void
