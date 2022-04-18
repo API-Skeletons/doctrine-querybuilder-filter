@@ -229,4 +229,4 @@ names in this array.
 This method is for post-processing of the target entity.  When users use
 deep filtering using `enableAssociations()` aliases are created for every
 entity joined to the original entity query.  This method returns an array of
-`[entityClass => alias]` for all entities joined in the QueryBuilder.
+`[alias => entityClass]` for all entities joined in the QueryBuilder.
